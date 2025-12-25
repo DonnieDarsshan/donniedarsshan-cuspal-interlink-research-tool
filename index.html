@@ -890,10 +890,9 @@ buildCuspalChart = function(){
 
 
 
-
-
 <!-- =========================================================
      PART 4 : KP PLANETARY TABLE-3 (PIVOT-ORDERED)
+     (RAHU / KETU SIGN-LORD DISPOSITOR PATCH – FINAL)
      ========================================================= -->
 <script>
 function buildTable3(){
@@ -934,7 +933,7 @@ function buildTable3(){
         </tr>
     `;
 
-    /* ---------- BUILD ROWS IN PIVOT ORDER ---------- */
+    /* ---------- BUILD ROWS ---------- */
     displayPlanets.forEach(p=>{
 
         let sub=[], ssl=[], star=[], sign=[];
@@ -949,18 +948,48 @@ function buildTable3(){
             if(c.signLord === p) sign.push(h);
         });
 
-        /* ---------- NUMERIC SORT ---------- */
-        sub  = sub.map(Number).sort((a,b)=>a-b);
-        ssl  = ssl.map(Number).sort((a,b)=>a-b);
-        star = star.map(Number).sort((a,b)=>a-b);
-        sign = sign.map(Number).sort((a,b)=>a-b);
+        /* ---------- RAHU / KETU SIGN-LORD DISPOSITOR ONLY ---------- */
+        if((p === "Rahu" || p === "Ketu") && sign.length === 0){
 
-        let placed = rotateHouse(getPlanetHouse(p), pivotHouse);
-		if(document.getElementById("retroMode")?.checked){
-		placed = applyRetroPlacement(placed);
-		}
+            let signPlaced =
+                document.getElementById(p+"_sign").value;
 
+            let dispositor = signLords[signPlaced];
 
+            if(dispositor){
+
+                /* take ONLY sign-lord houses of dispositor */
+                cuspsData.forEach(c=>{
+                    if(c.signLord === dispositor){
+                        let h = rotateHouse(c.bhava, pivotHouse);
+                        sign.push(h);
+                    }
+                });
+
+                /* also add dispositor's own placement */
+                let dispPlacement =
+                    rotateHouse(
+                        getPlanetHouse(dispositor),
+                        pivotHouse
+                    );
+
+                sign.push(dispPlacement);
+            }
+        }
+
+        /* ---------- SORT & UNIQUE ---------- */
+        sub  = [...new Set(sub.map(Number))].sort((a,b)=>a-b);
+        ssl  = [...new Set(ssl.map(Number))].sort((a,b)=>a-b);
+        star = [...new Set(star.map(Number))].sort((a,b)=>a-b);
+        sign = [...new Set(sign.map(Number))].sort((a,b)=>a-b);
+
+        /* ---------- PLACEMENT (UNCHANGED) ---------- */
+        let placed =
+            rotateHouse(getPlanetHouse(p), pivotHouse);
+
+        if(document.getElementById("retroMode")?.checked){
+            placed = applyRetroPlacement(placed);
+        }
 
         html += `
         <tr>
@@ -984,8 +1013,6 @@ function buildTable3(){
     );
 }
 </script>
-
-
 
 
 
@@ -1177,4 +1204,5 @@ function buildTable4(){
     };
 })();
 </script>
+
 

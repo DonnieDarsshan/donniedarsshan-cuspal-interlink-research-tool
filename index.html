@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>KP Cuspal Research Tool</title>
+
+<style>
+/* =========================================================
+   TANTRIC FIRE – OCCULT POWER THEME
+   Dark • Saffron • Gold • Ritual Glow
+   ========================================================= */
+
+:root{
+    --bg-main: radial-gradient(circle at top, #1b0a0a, #070303 70%);
+    --panel-bg: #120606;
+    --border-gold: #a86b17;
+    --border-soft: #3a1a12;
+
+    --text-main: #f3e8d0;
+    --text-dim: #c7b38a;
+
+    --accent-saffron: #ff9f1c;
+    --accent-fire: #ff6a00;
+    --accent-crimson: #b11226;
+
+    --table-head-bg: linear-gradient(180deg, #2a0f0f, #140707);
+    --table-row-hover: rgba(255,159,28,0.08);
+
+    --btn-bg: linear-gradient(135deg, #ff9f1c, #b11226);
+    --btn-hover: linear-gradient(135deg, #ffb347, #d4142a);
+
+    --glow: 0 0 12px rgba(255,159,28,0.35);
+}
+
+/* ---------- BODY ---------- */
+body{
+    background: var(--bg-main);
+    color: var(--text-main);
+    font-family: "Segoe UI", Arial, sans-serif;
+    padding: 20px;
+}
+
+/* ---------- HEADINGS ---------- */
+h2{
+    color: var(--accent-saffron);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 30px;
+    text-shadow: 0 0 8px rgba(255,159,28,0.5);
+}
+
+/* ---------- TABLE ---------- */
+table{
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 16px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-gold);
+    box-shadow: var(--glow);
+}
+
+th, td{
+    border: 1px solid var(--border-soft);
+    padding: 8px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* ---------- TABLE HEADER ---------- */
+th{
+    background: var(--table-head-bg);
+    color: #ffd27d;
+    font-weight: 600;
+}
+
+/* ---------- TABLE ROW HOVER ---------- */
+tr:hover td{
+    background: var(--table-row-hover);
+}
+
+/* ---------- SELECT / INPUT ---------- */
+select{
+    background: #1a0808;
+    color: var(--text-main);
+    border: 1px solid var(--border-gold);
+    padding: 6px;
+    outline: none;
+}
+
+select:focus{
+    box-shadow: var(--glow);
+    border-color: var(--accent-saffron);
+}
+
+select option{
+    background: #120606;
+    color: var(--text-main);
+}
+
+/* ---------- BUTTONS ---------- */
+button{
+    background: var(--btn-bg);
+    border: none;
+    color: #1a0606;
+    padding: 7px 14px;
+    margin: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: var(--glow);
+    transition: all 0.25s ease;
+}
+
+button:hover{
+    background: var(--btn-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 0 18px rgba(255,159,28,0.6);
+}
+
+/* ---------- CHECKBOX ---------- */
+input[type="checkbox"]{
+    accent-color: var(--accent-saffron);
+}
+
+/* ---------- HIDDEN ---------- */
+.hidden{
+    display: none;
+}
+
+/* ---------- SECTION SPACING ---------- */
+#output, #table3, #table4{
+    margin-top: 30px;
+}
+
+/* ---------- OCCULT DIVIDER EFFECT ---------- */
+hr{
+    border: none;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--accent-saffron),
+        transparent
+    );
+    margin: 25px 0;
+}
+</style>
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+
+<h2>DONNIE DARSSHAN RESEARCH TOOL FOR CUSPAL INTERLINK</h2>
+
+<label>
+<input type="checkbox" id="manualMode" checked>
+Manual Cusps (unchecked = Equal cusps from Lagna)
+</label>
+
+<button onclick="autoFillSigns()">Auto Fill Signs (From Lagna)</button>
+
+<table id="inputTable">
+<tr>
+<th>Bhava / Planet</th>
+<th>Zodiac Sign</th>
+<th>Degree</th>
+<th>Minute</th>
+<th>Second</th>
+</tr>
+</table>
+
+<button onclick="buildCuspalChart()">Build Cuspal Chart</button>
+<button onclick="saveJSON()">Save JSON</button>
+<button onclick="loadJSON()">Load JSON</button>
+<button onclick="clearAll()">Clear All</button>
+
+<div id="output"></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+/* =========================================================
+   PART 1 : INPUT SYSTEM ONLY (NO KP LOGIC)
+   DBA PLANET NAMES + DBA ORDER
+   ========================================================= */
+
+/* ---------- ZODIAC SIGNS ---------- */
+const signs = [
+    "", "Aries","Taurus","Gemini","Cancer","Leo","Virgo",
+    "Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"
+];
+
+/* ---------- PLANETS (DBA ORDER) ---------- */
+const planets = [
+    "Surya",
+    "Chandra",
+    "Mangala",
+    "Rahu",
+    "Jupiter",
+    "Saturn",
+    "Budha",
+    "Ketu",
+    "Venus"
+];
+
+const table = document.getElementById("inputTable");
+
+/* ---------- DEGREE DROPDOWN ---------- */
+function createDegreeSelect(){
+    let s=document.createElement("select");
+    for(let i=0;i<=29;i++){
+        let o=document.createElement("option");
+        o.value=i;
+        o.text=i.toString().padStart(2,"0");
+        s.appendChild(o);
+    }
+    return s;
+}
+
+/* ---------- MINUTE DROPDOWN ---------- */
+function createMinuteSelect(){
+    let s=document.createElement("select");
+    for(let i=0;i<=59;i++){
+        let o=document.createElement("option");
+        o.value=i;
+        o.text=i.toString().padStart(2,"0");
+        s.appendChild(o);
+    }
+    return s;
+}
+
+/* ---------- SECOND DROPDOWN ---------- */
+function createSecondSelect(){
+    let s=document.createElement("select");
+    for(let i=0;i<=59;i++){
+        let o=document.createElement("option");
+        o.value=i;
+        o.text=i.toString().padStart(2,"0");
+        s.appendChild(o);
+    }
+    return s;
+}
+
+/* ---------- BUILD 12 CUSPS ---------- */
+for(let i=1;i<=12;i++){
+    let row=table.insertRow();
+    row.id="cuspRow"+i;
+
+    row.insertCell().innerText="Cusp "+i;
+
+    let signCell=row.insertCell();
+    let signSel=document.createElement("select");
+    signSel.id="c"+i+"_sign";
+    signs.forEach(s=>{
+        let o=document.createElement("option");
+        o.value=s; o.text=s;
+        signSel.appendChild(o);
+    });
+    signCell.appendChild(signSel);
+
+    let degCell=row.insertCell();
+    let degSel=createDegreeSelect();
+    degSel.id="c"+i+"_deg";
+    degCell.appendChild(degSel);
+
+    let minCell=row.insertCell();
+    let minSel=createMinuteSelect();
+    minSel.id="c"+i+"_min";
+    minCell.appendChild(minSel);
+
+    let secCell=row.insertCell();
+    let secSel=createSecondSelect();
+    secSel.id="c"+i+"_sec";
+    secCell.appendChild(secSel);
+}
+
+/* ---------- BUILD PLANETS (DBA ORDER) ---------- */
+planets.forEach(p=>{
+    let row=table.insertRow();
+    row.insertCell().innerText=p;
+
+    let signCell=row.insertCell();
+    let signSel=document.createElement("select");
+    signSel.id=p+"_sign";
+    signs.forEach(s=>{
+        let o=document.createElement("option");
+        o.value=s; o.text=s;
+        signSel.appendChild(o);
+    });
+    signCell.appendChild(signSel);
+
+    let degCell=row.insertCell();
+    let degSel=createDegreeSelect();
+    degSel.id=p+"_deg";
+    degCell.appendChild(degSel);
+
+    let minCell=row.insertCell();
+    let minSel=createMinuteSelect();
+    minSel.id=p+"_min";
+    minCell.appendChild(minSel);
+
+    let secCell=row.insertCell();
+    let secSel=createSecondSelect();
+    secSel.id=p+"_sec";
+    secCell.appendChild(secSel);
+});
+
+/* ---------- AUTO FILL SIGNS FROM LAGNA ---------- */
+function autoFillSigns(){
+    let lagnaIndex=document.getElementById("c1_sign").selectedIndex;
+    if(lagnaIndex===0) return;
+    for(let i=2;i<=12;i++){
+        let idx=(lagnaIndex+(i-1))%12;
+        if(idx===0) idx=12;
+        document.getElementById("c"+i+"_sign").selectedIndex=idx;
+    }
+}
+
+/* ---------- MANUAL / EQUAL CUSP TOGGLE ---------- */
+manualMode.onchange=()=>{
+    for(let i=2;i<=12;i++){
+        document.getElementById("cuspRow"+i)
+            .classList.toggle("hidden",!manualMode.checked);
+    }
+};
+manualMode.onchange();
+
+/* =========================================================
+   SAVE JSON
+   ========================================================= */
+function saveJSON(){
+
+    let data={
+        manualMode: manualMode.checked,
+        cusps:{},
+        planets:{}
+    };
+
+    for(let i=1;i<=12;i++){
+        data.cusps[i]={
+            sign:document.getElementById("c"+i+"_sign").value,
+            deg: document.getElementById("c"+i+"_deg").value,
+            min: document.getElementById("c"+i+"_min").value,
+            sec: document.getElementById("c"+i+"_sec").value
+        };
+    }
+
+    planets.forEach(p=>{
+        data.planets[p]={
+            sign:document.getElementById(p+"_sign").value,
+            deg: document.getElementById(p+"_deg").value,
+            min: document.getElementById(p+"_min").value,
+            sec: document.getElementById(p+"_sec").value
+        };
+    });
+
+    let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    let a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="kp_data.json";
+    a.click();
+}
+
+/* =========================================================
+   LOAD JSON
+   ========================================================= */
+function loadJSON(){
+
+    let f=document.createElement("input");
+    f.type="file";
+    f.accept="application/json";
+
+    f.onchange=e=>{
+        let r=new FileReader();
+        r.onload=()=>{
+            let d=JSON.parse(r.result);
+
+            manualMode.checked=d.manualMode;
+            manualMode.onchange();
+
+            for(let i=1;i<=12;i++){
+                document.getElementById("c"+i+"_sign").value=d.cusps[i].sign;
+                document.getElementById("c"+i+"_deg").value=d.cusps[i].deg;
+                document.getElementById("c"+i+"_min").value=d.cusps[i].min;
+                document.getElementById("c"+i+"_sec").value=d.cusps[i].sec;
+            }
+
+            planets.forEach(p=>{
+                document.getElementById(p+"_sign").value=d.planets[p].sign;
+                document.getElementById(p+"_deg").value=d.planets[p].deg;
+                document.getElementById(p+"_min").value=d.planets[p].min;
+                document.getElementById(p+"_sec").value=d.planets[p].sec;
+            });
+        };
+        r.readAsText(e.target.files[0]);
+    };
+    f.click();
+}
+
+/* =========================================================
+   CLEAR ALL
+   ========================================================= */
+function clearAll(){
+
+    manualMode.checked=true;
+    manualMode.onchange();
+
+    for(let i=1;i<=12;i++){
+        document.getElementById("c"+i+"_sign").selectedIndex=0;
+        document.getElementById("c"+i+"_deg").value=0;
+        document.getElementById("c"+i+"_min").value=0;
+        document.getElementById("c"+i+"_sec").value=0;
+    }
+
+    planets.forEach(p=>{
+        document.getElementById(p+"_sign").selectedIndex=0;
+        document.getElementById(p+"_deg").value=0;
+        document.getElementById(p+"_min").value=0;
+        document.getElementById(p+"_sec").value=0;
+    });
+
+    document.getElementById("output").innerHTML="";
+}
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- =========================================================
+     PART 2 : KP CORE LOGIC (CUSPS ONLY – DBA FIXED)
+     ========================================================= -->
+<script>
+/* =========================================================
+   KP CONSTANTS (DBA NAMES)
+   ========================================================= */
+
+/* ---------- SIGN LORDS (DBA) ---------- */
+const signLords = {
+    Aries:       "Mangala",
+    Taurus:      "Venus",
+    Gemini:      "Budha",
+    Cancer:      "Chandra",
+    Leo:         "Surya",
+    Virgo:       "Budha",
+    Libra:       "Venus",
+    Scorpio:     "Mangala",
+    Sagittarius: "Jupiter",
+    Capricorn:   "Saturn",
+    Aquarius:    "Saturn",
+    Pisces:      "Jupiter"
+};
+
+/* ---------- KP STAR ORDER (DBA) ---------- */
+const starCycle = [
+    "Ketu",
+    "Venus",
+    "Surya",
+    "Chandra",
+    "Mangala",
+    "Rahu",
+    "Jupiter",
+    "Saturn",
+    "Budha"
+];
+
+/* ---------- VIMSHOTTARI YEARS (DBA) ---------- */
+const vimYears = {
+    Ketu:    7,
+    Venus:   20,
+    Surya:   6,
+    Chandra: 10,
+    Mangala: 7,
+    Rahu:    18,
+    Jupiter: 16,
+    Saturn:  19,
+    Budha:   17
+};
+
+/* ---------- STORAGE ---------- */
+let cuspsData = [];
+
+/* =========================================================
+   DEGREE CALCULATIONS
+   ========================================================= */
+
+/* ABSOLUTE DEGREE (0–360) */
+function absoluteDeg(signIndex, deg, min, sec){
+    return (signIndex - 1) * 30
+         + Number(deg)
+         + Number(min) / 60
+         + Number(sec) / 3600;
+}
+
+/* STAR INDEX (13°20′ = 13.3333333333°) */
+function getStarIndex(absDeg){
+    return Math.floor(absDeg / 13.3333333333) % 9;
+}
+
+/* =========================================================
+   SUB LORD (UNEQUAL)
+   ========================================================= */
+function getSubIndex(starIndex, degInsideStar){
+
+    let start = 0;
+
+    for(let i=0;i<9;i++){
+        let lord = starCycle[(starIndex + i) % 9];
+        let span = (vimYears[lord] / 120) * 13.3333333333;
+
+        if(degInsideStar >= start && degInsideStar < start + span){
+            return (starIndex + i) % 9;
+        }
+        start += span;
+    }
+    return starIndex;
+}
+
+/* =========================================================
+   SUB-SUB LORD
+   ========================================================= */
+function getSSLIndex(subIndex, degInsideSub){
+
+    let start = 0;
+
+    for(let i=0;i<9;i++){
+        let lord = starCycle[(subIndex + i) % 9];
+        let span = (vimYears[lord] / 120) * degInsideSub.totalSpan;
+
+        if(degInsideSub.offset >= start && degInsideSub.offset < start + span){
+            return (subIndex + i) % 9;
+        }
+        start += span;
+    }
+    return subIndex;
+}
+
+/* =========================================================
+   BUILD KP CUSPAL DATA (CORRECTED & DBA SAFE)
+   ========================================================= */
+function buildCuspalChart(){
+
+    cuspsData = [];
+    let manual = manualMode.checked;
+
+    let lagnaSign = document.getElementById("c1_sign").selectedIndex;
+    let lagnaDeg  = document.getElementById("c1_deg").value;
+    let lagnaMin  = document.getElementById("c1_min").value;
+    let lagnaSec  = document.getElementById("c1_sec").value;
+
+    /* ---------- BUILD RAW CUSPS ---------- */
+    for(let i=1;i<=12;i++){
+
+        let signIndex, deg, min, sec;
+
+        if(manual){
+            signIndex = document.getElementById("c"+i+"_sign").selectedIndex;
+            deg = document.getElementById("c"+i+"_deg").value;
+            min = document.getElementById("c"+i+"_min").value;
+            sec = document.getElementById("c"+i+"_sec").value;
+        }else{
+            signIndex = (lagnaSign + (i-1)) % 12;
+            if(signIndex === 0) signIndex = 12;
+            deg = lagnaDeg;
+            min = lagnaMin;
+            sec = lagnaSec;
+        }
+
+        let absDeg = absoluteDeg(signIndex, deg, min, sec);
+
+        let starIndex = getStarIndex(absDeg);
+        let degInsideStar = absDeg % 13.3333333333;
+
+        let subIndex = getSubIndex(starIndex, degInsideStar);
+
+        let subSpan = (vimYears[starCycle[subIndex]] / 120) * 13.3333333333;
+
+        let subStart = 0;
+        for(let k=0;k<9;k++){
+            let lord = starCycle[(starIndex + k) % 9];
+            let span = (vimYears[lord] / 120) * 13.3333333333;
+            if((starIndex + k) % 9 === subIndex) break;
+            subStart += span;
+        }
+
+        let degInsideSub = {
+            offset: degInsideStar - subStart,
+            totalSpan: subSpan
+        };
+
+        let sslIndex = getSSLIndex(subIndex, degInsideSub);
+
+        cuspsData.push({
+            bhava: i,
+            sign: signs[signIndex],
+            deg: deg,
+            min: min,
+            sec: sec,
+            absDeg: absDeg,
+            signLord: signLords[signs[signIndex]],
+            starLord: starCycle[starIndex],
+            subLord:  starCycle[subIndex],
+            sslLord:  starCycle[sslIndex]
+        });
+    }
+
+    /* ---------- SORT BY DEGREE (CRITICAL) ---------- */
+    cuspsData.sort((a,b)=>a.absDeg - b.absDeg);
+
+    renderCuspalTable();
+}
+
+/* =========================================================
+   RENDER CUSP TABLE
+   ========================================================= */
+function renderCuspalTable(){
+
+    let html = `
+    <h2>KP Cuspal Chart</h2>
+    <table>
+        <tr>
+            <th>Bhava</th>
+            <th>Sign</th>
+            <th>Degree</th>
+            <th>Sign Lord</th>
+            <th>Star Lord</th>
+            <th>Sub Lord</th>
+            <th>Sub-Sub Lord</th>
+        </tr>
+    `;
+
+    cuspsData.forEach(c=>{
+        html += `
+        <tr>
+            <td>${c.bhava}</td>
+            <td>${c.sign}</td>
+            <td>${String(c.deg).padStart(2,"0")}°
+                ${String(c.min).padStart(2,"0")}'
+                ${String(c.sec).padStart(2,"0")}"</td>
+            <td>${c.signLord}</td>
+            <td>${c.starLord}</td>
+            <td>${c.subLord}</td>
+            <td>${c.sslLord}</td>
+        </tr>
+        `;
+    });
+
+    html += `</table>`;
+    document.getElementById("output").innerHTML = html;
+}
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- =========================================================
+     PART 3 : PLANET HOUSE ENGINE + PIVOT SYSTEM (DBA + CSL)
+     (RETRO SUPPORT – PLACEMENT ONLY)
+     ========================================================= -->
+<script>
+/* =========================================================
+   UI : PIVOT + HOUSE MODE
+   ========================================================= */
+document.body.insertAdjacentHTML("beforeend", `
+<h2>KP Pivot & House Mode</h2>
+
+<select id="pivotSelect">
+    <option value="Lagna">Lagna</option>
+
+    <option value="Surya">Surya</option>
+    <option value="Chandra">Chandra</option>
+    <option value="Mangala">Mangala</option>
+    <option value="Rahu">Rahu</option>
+    <option value="Jupiter">Jupiter</option>
+    <option value="Saturn">Saturn</option>
+    <option value="Budha">Budha</option>
+    <option value="Ketu">Ketu</option>
+    <option value="Venus">Venus</option>
+
+    <option value="CSL2">2 CSL</option>
+    <option value="CSL3">3 CSL</option>
+    <option value="CSL4">4 CSL</option>
+    <option value="CSL5">5 CSL</option>
+    <option value="CSL6">6 CSL</option>
+    <option value="CSL7">7 CSL</option>
+    <option value="CSL8">8 CSL</option>
+    <option value="CSL9">9 CSL</option>
+    <option value="CSL10">10 CSL</option>
+    <option value="CSL11">11 CSL</option>
+    <option value="CSL12">12 CSL</option>
+</select>
+
+<label style="margin-left:15px;">
+    <input type="checkbox" id="vedicMode" checked>
+    Vedic House (±15°)
+</label>
+
+<label style="margin-left:15px;">
+    <input type="checkbox" id="retroMode">
+    Retro
+</label>
+`);
+
+/* =========================================================
+   ROTATE HOUSE FROM PIVOT (UNCHANGED)
+   ========================================================= */
+function rotateHouse(h, pivot){
+    let x = h - pivot + 1;
+    if(x <= 0) x += 12;
+    return x;
+}
+
+/* =========================================================
+   RETRO PLACEMENT INVERSION (DISPLAY ONLY)
+   RULE:
+   1→1, 7→7, others: 14-h
+   ========================================================= */
+function applyRetroPlacement(h){
+    if(h === 1 || h === 7) return h;
+    return 14 - h;
+}
+
+/* =========================================================
+   GET PLANET ABSOLUTE DEGREE
+   ========================================================= */
+function getPlanetAbsDeg(p){
+    return absoluteDeg(
+        signs.indexOf(document.getElementById(p+"_sign").value),
+        document.getElementById(p+"_deg").value,
+        document.getElementById(p+"_min").value,
+        document.getElementById(p+"_sec").value
+    );
+}
+
+/* =========================================================
+   KP HOUSE CALCULATION
+   ========================================================= */
+function getPlanetHouseKP(p){
+
+    let pAbs = getPlanetAbsDeg(p);
+
+    for(let i=0;i<cuspsData.length;i++){
+
+        let cur  = cuspsData[i];
+        let next = cuspsData[(i+1) % cuspsData.length];
+
+        let start = cur.absDeg;
+        let end   = next.absDeg;
+
+        if(start < end){
+            if(pAbs >= start && pAbs < end){
+                return cur.bhava;
+            }
+        }else{
+            if(pAbs >= start || pAbs < end){
+                return cur.bhava;
+            }
+        }
+    }
+    return cuspsData[0].bhava;
+}
+
+/* =========================================================
+   VEDIC HOUSE (±15°)
+   ========================================================= */
+function getPlanetHouseVedic(p){
+
+    let pAbs = getPlanetAbsDeg(p);
+
+    for(let c of cuspsData){
+
+        let start = c.absDeg - 15;
+        let end   = c.absDeg + 15;
+
+        if(start < 0)   start += 360;
+        if(end >= 360)  end   -= 360;
+
+        if(start < end){
+            if(pAbs >= start && pAbs < end) return c.bhava;
+        }else{
+            if(pAbs >= start || pAbs < end) return c.bhava;
+        }
+    }
+    return cuspsData[0].bhava;
+}
+
+/* =========================================================
+   HOUSE SELECTOR (UNCHANGED)
+   ========================================================= */
+function getPlanetHouse(p){
+    return document.getElementById("vedicMode").checked
+        ? getPlanetHouseVedic(p)
+        : getPlanetHouseKP(p);
+}
+
+/* =========================================================
+   GET PIVOT HOUSE (UNCHANGED)
+   ========================================================= */
+function getPivotHouse(){
+
+    let pivot = document.getElementById("pivotSelect").value;
+
+    if(pivot === "Lagna") return 1;
+
+    if(pivot.startsWith("CSL")){
+        return Number(pivot.replace("CSL",""));
+    }
+
+    return getPlanetHouse(pivot);
+}
+
+/* =========================================================
+   AUTO REFRESH HOOKS
+   ========================================================= */
+const __buildCuspalChart = buildCuspalChart;
+buildCuspalChart = function(){
+    __buildCuspalChart();
+    if(typeof buildTable3 === "function"){
+        buildTable3();
+    }
+};
+
+["pivotSelect","vedicMode","retroMode"].forEach(id=>{
+    document.getElementById(id).onchange = ()=>{
+        if(typeof buildTable3 === "function"){
+            buildTable3();
+        }
+    };
+});
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- =========================================================
+     PART 4 : KP PLANETARY TABLE-3 (PIVOT-ORDERED)
+     ========================================================= -->
+<script>
+function buildTable3(){
+
+    if(cuspsData.length === 0) return;
+
+    let old = document.getElementById("table3");
+    if(old) old.remove();
+
+    /* ---------- PIVOT SELECTION ---------- */
+    let pivot = document.getElementById("pivotSelect").value;
+
+    /* ---------- PLANET DISPLAY ORDER ---------- */
+    let displayPlanets = [...planets];
+
+    if(pivot !== "Lagna"){
+        let idx = displayPlanets.indexOf(pivot);
+        if(idx !== -1){
+            displayPlanets =
+                displayPlanets.slice(idx)
+                .concat(displayPlanets.slice(0, idx));
+        }
+    }
+
+    let pivotHouse = getPivotHouse();
+
+    let html = `
+    <div id="table3">
+    <h2>KP Table-3 : Planetary House Significations (Pivot Based)</h2>
+    <table>
+        <tr>
+            <th>Planet</th>
+            <th>Sub Lord</th>
+            <th>Sub-Sub Lord</th>
+            <th>Star Lord</th>
+            <th>Sign Lord</th>
+            <th>Placement</th>
+        </tr>
+    `;
+
+    /* ---------- BUILD ROWS IN PIVOT ORDER ---------- */
+    displayPlanets.forEach(p=>{
+
+        let sub=[], ssl=[], star=[], sign=[];
+
+        cuspsData.forEach(c=>{
+
+            let h = rotateHouse(c.bhava, pivotHouse);
+
+            if(c.subLord  === p) sub.push(h);
+            if(c.sslLord  === p) ssl.push(h);
+            if(c.starLord === p) star.push(h);
+            if(c.signLord === p) sign.push(h);
+        });
+
+        /* ---------- NUMERIC SORT ---------- */
+        sub  = sub.map(Number).sort((a,b)=>a-b);
+        ssl  = ssl.map(Number).sort((a,b)=>a-b);
+        star = star.map(Number).sort((a,b)=>a-b);
+        sign = sign.map(Number).sort((a,b)=>a-b);
+
+        let placed = rotateHouse(getPlanetHouse(p), pivotHouse);
+		if(document.getElementById("retroMode")?.checked){
+		placed = applyRetroPlacement(placed);
+		}
+
+
+
+        html += `
+        <tr>
+            <td><b>${p}</b></td>
+            <td>${sub.length  ? sub.join(",")  : "xx"}</td>
+            <td>${ssl.length  ? ssl.join(",")  : "xx"}</td>
+            <td>${star.length ? star.join(",") : "xx"}</td>
+            <td>${sign.length ? sign.join(",") : "xx"}</td>
+            <td>${placed}</td>
+        </tr>
+        `;
+    });
+
+    html += `
+    </table>
+    </div>
+    `;
+
+    document.body.appendChild(
+        Object.assign(document.createElement("div"), { innerHTML: html })
+    );
+}
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- =========================================================
+     PART 5 : KP TABLE-4 (PIVOT ORDER + SORT FIX FINAL)
+     ========================================================= -->
+<script>
+/* =========================================================
+   HELPER : SORT HOUSE LIST STRING
+   ========================================================= */
+function sortHouseString(str){
+    if(!str || str === "xx") return "xx";
+    return str
+        .split(",")
+        .map(Number)
+        .sort((a,b)=>a-b)
+        .join(",");
+}
+
+/* =========================================================
+   REQUIRED : PLANET KP LORDS
+   ========================================================= */
+function getPlanetKPLords(p){
+
+    let signIndex = signs.indexOf(
+        document.getElementById(p+"_sign").value
+    );
+    if(signIndex <= 0) return null;
+
+    let deg = document.getElementById(p+"_deg").value;
+    let min = document.getElementById(p+"_min").value;
+    let sec = document.getElementById(p+"_sec").value;
+
+    let absDeg = absoluteDeg(signIndex, deg, min, sec);
+
+    let starIndex = getStarIndex(absDeg);
+    let degInsideStar = absDeg % 13.3333333333;
+
+    let subIndex = getSubIndex(starIndex, degInsideStar);
+
+    let subSpan = (vimYears[starCycle[subIndex]] / 120) * 13.3333333333;
+
+    let subStart = 0;
+    for(let i=0;i<9;i++){
+        let lord = starCycle[(starIndex + i) % 9];
+        let span = (vimYears[lord] / 120) * 13.3333333333;
+        if((starIndex + i) % 9 === subIndex) break;
+        subStart += span;
+    }
+
+    let degInsideSub = {
+        offset: degInsideStar - subStart,
+        totalSpan: subSpan
+    };
+
+    let sslIndex = getSSLIndex(subIndex, degInsideSub);
+
+    return {
+        planet: p,
+        star:   starCycle[starIndex],
+        sub:    starCycle[subIndex],
+        ssl:    starCycle[sslIndex]
+    };
+}
+
+/* =========================================================
+   BUILD TABLE-4 (PIVOT ORDERED)  🔥 PATCHED HEADING
+   ========================================================= */
+function buildTable4(){
+
+    let old = document.getElementById("table4");
+    if(old) old.remove();
+
+    let t3Table = document.querySelector("#table3 table");
+    if(!t3Table) return;
+
+    /* ---------- READ TABLE-3 ---------- */
+    let t3 = {};
+    t3Table.querySelectorAll("tr").forEach((r,i)=>{
+        if(i === 0) return;
+        let c = r.children;
+        t3[c[0].innerText] = {
+            sub:   sortHouseString(c[1].innerText),
+            ssl:   sortHouseString(c[2].innerText),
+            star:  sortHouseString(c[3].innerText),
+            sign:  sortHouseString(c[4].innerText),
+            place: c[5].innerText
+        };
+    });
+
+    /* ---------- PIVOT ORDER ---------- */
+    let pivot = document.getElementById("pivotSelect").value;
+    let displayPlanets = [...planets];
+
+    if(pivot !== "Lagna"){
+        let idx = displayPlanets.indexOf(pivot);
+        if(idx !== -1){
+            displayPlanets =
+                displayPlanets.slice(idx)
+                .concat(displayPlanets.slice(0, idx));
+        }
+    }
+
+    let html = `
+    <div id="table4">
+    <h2>KP Table-4 : Planet → Star → Sub → Sub-Sub</h2>
+    `;
+
+    /* ---------- BUILD PLANET BLOCKS ---------- */
+    displayPlanets.forEach(p=>{
+
+        let kp = getPlanetKPLords(p);
+        if(!kp) return;
+
+        let rows = [
+            { label:"Planet",    planet:p,       data:t3[p] },
+            { label:"Star Lord", planet:kp.star, data:t3[kp.star] },
+            { label:"Sub Lord",  planet:kp.sub,  data:t3[kp.sub] },
+            { label:"Sub-Sub",   planet:kp.ssl,  data:t3[kp.ssl] }
+        ];
+
+        html += `
+        <table style="margin-bottom:20px;">
+        <tr>
+            <th colspan="7"
+                style="
+                    font-size:20px;
+                    font-weight:700;
+                    text-transform:uppercase;
+                    letter-spacing:1.5px;
+                    color:#ff9f1c;
+                    background:linear-gradient(180deg,#2a0f0f,#140707);
+                    text-shadow:0 0 10px rgba(255,159,28,0.6);
+                    padding:12px 0;
+                    border-bottom:2px solid #a86b17;
+                ">
+                ${p}
+            </th>
+        </tr>
+        <tr>
+            <th>Entity</th>
+            <th>Planet</th>
+            <th>Sub</th>
+            <th>Sub-Sub</th>
+            <th>Star</th>
+            <th>Sign</th>
+            <th>Placement</th>
+        </tr>
+        `;
+
+        rows.forEach(r=>{
+            html += `
+            <tr>
+                <td>${r.label}</td>
+                <td><b>${r.planet}</b></td>
+                <td>${r.data ? r.data.sub  : "xx"}</td>
+                <td>${r.data ? r.data.ssl  : "xx"}</td>
+                <td>${r.data ? r.data.star : "xx"}</td>
+                <td>${r.data ? r.data.sign : "xx"}</td>
+                <td>${r.data ? r.data.place: "xx"}</td>
+            </tr>
+            `;
+        });
+
+        html += `</table>`;
+    });
+
+    html += `</div>`;
+    document.body.insertAdjacentHTML("beforeend", html);
+}
+
+/* =========================================================
+   SAFE AUTO REFRESH
+   ========================================================= */
+(function(){
+    const _orig = buildTable3;
+    buildTable3 = function(){
+        _orig();
+        buildTable4();
+    };
+})();
+</script>
+

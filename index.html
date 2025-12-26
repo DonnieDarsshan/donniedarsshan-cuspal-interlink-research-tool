@@ -461,87 +461,61 @@ function clearAll(){
 
 <!-- =========================================================
      PART 2 : KP CORE LOGIC (CUSPS ONLY – DBA FIXED)
+     (BHAVA DISPLAY ORDER FIXED — FINAL)
      ========================================================= -->
 <script>
 /* =========================================================
    KP CONSTANTS (DBA NAMES)
    ========================================================= */
 
-/* ---------- SIGN LORDS (DBA) ---------- */
+/* ---------- SIGN LORDS ---------- */
 const signLords = {
-    Aries:       "Mangala",
-    Taurus:      "Venus",
-    Gemini:      "Budha",
-    Cancer:      "Chandra",
-    Leo:         "Surya",
-    Virgo:       "Budha",
-    Libra:       "Venus",
-    Scorpio:     "Mangala",
-    Sagittarius: "Jupiter",
-    Capricorn:   "Saturn",
-    Aquarius:    "Saturn",
-    Pisces:      "Jupiter"
+    Aries: "Mangala", Taurus: "Venus", Gemini: "Budha",
+    Cancer: "Chandra", Leo: "Surya", Virgo: "Budha",
+    Libra: "Venus", Scorpio: "Mangala",
+    Sagittarius: "Jupiter", Capricorn: "Saturn",
+    Aquarius: "Saturn", Pisces: "Jupiter"
 };
 
-/* ---------- KP STAR ORDER (DBA) ---------- */
+/* ---------- STAR ORDER ---------- */
 const starCycle = [
-    "Ketu",
-    "Venus",
-    "Surya",
-    "Chandra",
-    "Mangala",
-    "Rahu",
-    "Jupiter",
-    "Saturn",
-    "Budha"
+    "Ketu","Venus","Surya","Chandra",
+    "Mangala","Rahu","Jupiter","Saturn","Budha"
 ];
 
-/* ---------- VIMSHOTTARI YEARS (DBA) ---------- */
+/* ---------- VIMSHOTTARI YEARS ---------- */
 const vimYears = {
-    Ketu:    7,
-    Venus:   20,
-    Surya:   6,
-    Chandra: 10,
-    Mangala: 7,
-    Rahu:    18,
-    Jupiter: 16,
-    Saturn:  19,
-    Budha:   17
+    Ketu:7, Venus:20, Surya:6, Chandra:10,
+    Mangala:7, Rahu:18, Jupiter:16, Saturn:19, Budha:17
 };
 
-/* ---------- STORAGE ---------- */
+/* ---------- STORAGE (ALWAYS DEGREE SORTED) ---------- */
 let cuspsData = [];
 
 /* =========================================================
-   DEGREE CALCULATIONS
+   DEGREE UTILITIES
    ========================================================= */
-
-/* ABSOLUTE DEGREE (0–360) */
 function absoluteDeg(signIndex, deg, min, sec){
     return (signIndex - 1) * 30
          + Number(deg)
-         + Number(min) / 60
-         + Number(sec) / 3600;
+         + Number(min)/60
+         + Number(sec)/3600;
 }
 
-/* STAR INDEX (13°20′ = 13.3333333333°) */
 function getStarIndex(absDeg){
     return Math.floor(absDeg / 13.3333333333) % 9;
 }
 
 /* =========================================================
-   SUB LORD (UNEQUAL)
+   SUB LORD
    ========================================================= */
 function getSubIndex(starIndex, degInsideStar){
-
     let start = 0;
-
     for(let i=0;i<9;i++){
-        let lord = starCycle[(starIndex + i) % 9];
-        let span = (vimYears[lord] / 120) * 13.3333333333;
-
-        if(degInsideStar >= start && degInsideStar < start + span){
-            return (starIndex + i) % 9;
+        let lord = starCycle[(starIndex+i)%9];
+        let span = (vimYears[lord]/120)*13.3333333333;
+        if(degInsideStar >= start && degInsideStar < start+span){
+            return (starIndex+i)%9;
         }
         start += span;
     }
@@ -551,16 +525,13 @@ function getSubIndex(starIndex, degInsideStar){
 /* =========================================================
    SUB-SUB LORD
    ========================================================= */
-function getSSLIndex(subIndex, degInsideSub){
-
+function getSSLIndex(subIndex, d){
     let start = 0;
-
     for(let i=0;i<9;i++){
-        let lord = starCycle[(subIndex + i) % 9];
-        let span = (vimYears[lord] / 120) * degInsideSub.totalSpan;
-
-        if(degInsideSub.offset >= start && degInsideSub.offset < start + span){
-            return (subIndex + i) % 9;
+        let lord = starCycle[(subIndex+i)%9];
+        let span = (vimYears[lord]/120)*d.totalSpan;
+        if(d.offset >= start && d.offset < start+span){
+            return (subIndex+i)%9;
         }
         start += span;
     }
@@ -568,7 +539,7 @@ function getSSLIndex(subIndex, degInsideSub){
 }
 
 /* =========================================================
-   BUILD KP CUSPAL DATA (CORRECTED & DBA SAFE)
+   BUILD KP CUSPS (LOGIC SAFE)
    ========================================================= */
 function buildCuspalChart(){
 
@@ -580,7 +551,6 @@ function buildCuspalChart(){
     let lagnaMin  = document.getElementById("c1_min").value;
     let lagnaSec  = document.getElementById("c1_sec").value;
 
-    /* ---------- BUILD RAW CUSPS ---------- */
     for(let i=1;i<=12;i++){
 
         let signIndex, deg, min, sec;
@@ -592,60 +562,53 @@ function buildCuspalChart(){
             sec = document.getElementById("c"+i+"_sec").value;
         }else{
             signIndex = (lagnaSign + (i-1)) % 12;
-            if(signIndex === 0) signIndex = 12;
-            deg = lagnaDeg;
-            min = lagnaMin;
-            sec = lagnaSec;
+            if(signIndex===0) signIndex=12;
+            deg = lagnaDeg; min = lagnaMin; sec = lagnaSec;
         }
 
-        let absDeg = absoluteDeg(signIndex, deg, min, sec);
-
+        let absDeg = absoluteDeg(signIndex,deg,min,sec);
         let starIndex = getStarIndex(absDeg);
         let degInsideStar = absDeg % 13.3333333333;
+        let subIndex = getSubIndex(starIndex,degInsideStar);
 
-        let subIndex = getSubIndex(starIndex, degInsideStar);
-
-        let subSpan = (vimYears[starCycle[subIndex]] / 120) * 13.3333333333;
-
+        let subSpan = (vimYears[starCycle[subIndex]]/120)*13.3333333333;
         let subStart = 0;
         for(let k=0;k<9;k++){
-            let lord = starCycle[(starIndex + k) % 9];
-            let span = (vimYears[lord] / 120) * 13.3333333333;
-            if((starIndex + k) % 9 === subIndex) break;
-            subStart += span;
+            let lord = starCycle[(starIndex+k)%9];
+            if((starIndex+k)%9===subIndex) break;
+            subStart += (vimYears[lord]/120)*13.3333333333;
         }
 
-        let degInsideSub = {
-            offset: degInsideStar - subStart,
-            totalSpan: subSpan
-        };
-
-        let sslIndex = getSSLIndex(subIndex, degInsideSub);
+        let sslIndex = getSSLIndex(subIndex,{
+            offset:degInsideStar-subStart,
+            totalSpan:subSpan
+        });
 
         cuspsData.push({
-            bhava: i,
-            sign: signs[signIndex],
-            deg: deg,
-            min: min,
-            sec: sec,
-            absDeg: absDeg,
-            signLord: signLords[signs[signIndex]],
-            starLord: starCycle[starIndex],
-            subLord:  starCycle[subIndex],
-            sslLord:  starCycle[sslIndex]
+            bhava:i,
+            sign:signs[signIndex],
+            deg, min, sec,
+            absDeg,
+            signLord:signLords[signs[signIndex]],
+            starLord:starCycle[starIndex],
+            subLord:starCycle[subIndex],
+            sslLord:starCycle[sslIndex]
         });
     }
 
-    /* ---------- SORT BY DEGREE (CRITICAL) ---------- */
-    cuspsData.sort((a,b)=>a.absDeg - b.absDeg);
+    /* DEGREE SORT — REQUIRED FOR KP HOUSE ENGINE */
+    cuspsData.sort((a,b)=>a.absDeg-b.absDeg);
 
     renderCuspalTable();
 }
 
 /* =========================================================
-   RENDER CUSP TABLE
+   RENDER KP TABLE-2 (BHAVA ORDER ONLY)
    ========================================================= */
 function renderCuspalTable(){
+
+    /* TEMP BHAVA SORT — DISPLAY ONLY */
+    let view = [...cuspsData].sort((a,b)=>a.bhava-b.bhava);
 
     let html = `
     <h2>KP Cuspal Chart</h2>
@@ -658,11 +621,10 @@ function renderCuspalTable(){
             <th>Star Lord</th>
             <th>Sub Lord</th>
             <th>Sub-Sub Lord</th>
-        </tr>
-    `;
+        </tr>`;
 
-    cuspsData.forEach(c=>{
-        html += `
+    view.forEach(c=>{
+        html+=`
         <tr>
             <td>${c.bhava}</td>
             <td>${c.sign}</td>
@@ -673,14 +635,14 @@ function renderCuspalTable(){
             <td>${c.starLord}</td>
             <td>${c.subLord}</td>
             <td>${c.sslLord}</td>
-        </tr>
-        `;
+        </tr>`;
     });
 
-    html += `</table>`;
+    html+=`</table>`;
     document.getElementById("output").innerHTML = html;
 }
 </script>
+
 
 
 
@@ -1008,9 +970,11 @@ function buildTable3(){
     </div>
     `;
 
-    document.body.appendChild(
-        Object.assign(document.createElement("div"), { innerHTML: html })
-    );
+    const anchor = document.getElementById("kp-fixed-bottom");
+const wrapper = document.createElement("div");
+wrapper.innerHTML = html;
+anchor.before(wrapper);
+
 }
 </script>
 
@@ -1099,7 +1063,9 @@ function buildTable4(){
     if(!t3Table) return;
 
     /* ---------- READ TABLE-3 ---------- */
-    let t3 = {};
+    window.__T3_CACHE__ = {};
+	let t3 = window.__T3_CACHE__;
+
     t3Table.querySelectorAll("tr").forEach((r,i)=>{
         if(i === 0) return;
         let c = r.children;
@@ -1190,7 +1156,9 @@ function buildTable4(){
     });
 
     html += `</div>`;
-    document.body.insertAdjacentHTML("beforeend", html);
+    const anchor = document.getElementById("kp-fixed-bottom");
+anchor.insertAdjacentHTML("beforebegin", html);
+
 }
 
 /* =========================================================
@@ -1205,4 +1173,209 @@ function buildTable4(){
 })();
 </script>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- =========================================================
+     PART 6 : EFFECTIVE LINKS TABLE
+     (HARD-ANCHORED — NEVER MOVES)
+     + Ignore Sub-Sub Lord ROW FEATURE (DEFAULT ON)
+     ========================================================= -->
+<script>
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function nums(str){
+    if(!str || str === "xx") return [];
+    return str.split(",").map(Number).filter(n=>n>=1 && n<=12);
+}
+
+function uniqueSorted(arr){
+    return [...new Set(arr)].sort((a,b)=>a-b);
+}
+
+function isEven(n){ return n % 2 === 0; }
+function isOdd(n){ return n % 2 === 1; }
+
+function g1(n){ return [1,4,7,10].includes(n); }
+function g2(n){ return [2,5,8,11].includes(n); }
+function g3(n){ return [3,6,9,12].includes(n); }
+
+/* =========================================================
+   COLLECT NUMBERS FROM TABLE-3 CACHE
+   ========================================================= */
+function collectPlanet(p, useStar, useSSL){
+    let T3 = window.__T3_CACHE__;
+    if(!T3 || !T3[p]) return [];
+
+    let out = [];
+    out.push(...nums(T3[p].sub));
+    if(useStar) out.push(...nums(T3[p].star));
+    if(useSSL)  out.push(...nums(T3[p].ssl));
+    return out;
+}
+
+/* =========================================================
+   INIT SHELL (ONCE, HARD ANCHORED)
+   ========================================================= */
+function initTable5Shell(){
+
+    const root = document.getElementById("kp-fixed-bottom");
+    if(!root || root.querySelector("#table5-shell")) return;
+
+    root.innerHTML = `
+    <div id="table5-shell" style="margin-top:40px;">
+        <h2>Effective Links Table</h2>
+
+        <div style="margin-bottom:10px;">
+            <label style="margin-right:20px;">
+                <input type="checkbox" id="ignoreStar" checked>
+                Ignore Star Lord Column
+            </label>
+
+            <label style="margin-right:20px;">
+                <input type="checkbox" id="ignoreSSL" unchecked>
+                Ignore Sub-Sub Lord Column
+            </label>
+
+            <label>
+                <input type="checkbox" id="ignoreSSLRow" checked>
+                Ignore Sub-Sub Lord Row
+            </label>
+        </div>
+
+        <div id="table5"></div>
+    </div>
+    `;
+
+    document.getElementById("ignoreStar").onchange   = buildTable5;
+    document.getElementById("ignoreSSL").onchange    = buildTable5;
+    document.getElementById("ignoreSSLRow").onchange = buildTable5;
+}
+
+/* =========================================================
+   PIVOT SORT
+   ========================================================= */
+function getPivotSortedPlanets(){
+    let pivot = document.getElementById("pivotSelect")?.value;
+    let list = [...planets];
+    if(!pivot || pivot === "Lagna") return list;
+    let idx = list.indexOf(pivot);
+    if(idx === -1) return list;
+    return list.slice(idx).concat(list.slice(0, idx));
+}
+
+/* =========================================================
+   BUILD EFFECTIVE LINKS TABLE
+   ========================================================= */
+function buildTable5(){
+
+    initTable5Shell();
+
+    let T3 = window.__T3_CACHE__;
+    if(!T3) return;
+
+    let useStar      = !document.getElementById("ignoreStar").checked;
+    let useSSL       = !document.getElementById("ignoreSSL").checked;
+    let ignoreSSLRow = document.getElementById("ignoreSSLRow").checked;
+
+    let order = getPivotSortedPlanets();
+
+    let html = `
+    <table>
+        <tr>
+            <th>Planet</th>
+            <th>Even</th>
+            <th>Odd</th>
+            <th>1,4,7,10</th>
+            <th>2,5,8,11</th>
+            <th>3,6,9,12</th>
+        </tr>
+    `;
+
+    order.forEach(p=>{
+        let kp = getPlanetKPLords(p);
+        if(!kp) return;
+
+        let all = [];
+
+        /* Planet row */
+        all.push(...collectPlanet(p, useStar, useSSL));
+
+        /* Star row */
+        all.push(...collectPlanet(kp.star, useStar, useSSL));
+
+        /* Sub row */
+        all.push(...collectPlanet(kp.sub, useStar, useSSL));
+
+        /* Sub-Sub ROW (OPTIONAL) */
+        if(!ignoreSSLRow){
+            all.push(...collectPlanet(kp.ssl, useStar, useSSL));
+        }
+
+        all = uniqueSorted(all);
+
+        let e=[], o=[], a=[], b=[], c=[];
+        all.forEach(n=>{
+            if(isEven(n)) e.push(n);
+            if(isOdd(n))  o.push(n);
+            if(g1(n)) a.push(n);
+            if(g2(n)) b.push(n);
+            if(g3(n)) c.push(n);
+        });
+
+        html += `
+        <tr>
+            <td><b>${p}</b></td>
+            <td>${e.join(",")}</td>
+            <td>${o.join(",")}</td>
+            <td>${a.join(",")}</td>
+            <td>${b.join(",")}</td>
+            <td>${c.join(",")}</td>
+        </tr>`;
+    });
+
+    html += `</table>`;
+    document.getElementById("table5").innerHTML = html;
+}
+
+/* =========================================================
+   SAFE AUTO CHAIN
+   ========================================================= */
+(function(){
+    const _orig = buildTable4;
+    buildTable4 = function(){
+        _orig();
+        buildTable5();
+    };
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+<!-- 🔒 PERMANENT BOTTOM CONTAINER FOR EFFECTIVE LINKS -->
+<div id="kp-fixed-bottom"></div>
+
+</body>
+</html>
 

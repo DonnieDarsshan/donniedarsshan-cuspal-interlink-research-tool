@@ -1,0 +1,134 @@
+{
+  "personName": "KEERCHI",
+  "manualMode": true,
+  "cusps": {
+    "1": {
+      "sign": "Libra",
+      "deg": "25",
+      "min": "31",
+      "sec": "47"
+    },
+    "2": {
+      "sign": "Scorpio",
+      "deg": "24",
+      "min": "38",
+      "sec": "49"
+    },
+    "3": {
+      "sign": "Sagittarius",
+      "deg": "24",
+      "min": "7",
+      "sec": "14"
+    },
+    "4": {
+      "sign": "Capricorn",
+      "deg": "25",
+      "min": "1",
+      "sec": "57"
+    },
+    "5": {
+      "sign": "Aquarius",
+      "deg": "26",
+      "min": "59",
+      "sec": "55"
+    },
+    "6": {
+      "sign": "Pisces",
+      "deg": "27",
+      "min": "45",
+      "sec": "36"
+    },
+    "7": {
+      "sign": "Aries",
+      "deg": "25",
+      "min": "37",
+      "sec": "14"
+    },
+    "8": {
+      "sign": "Taurus",
+      "deg": "24",
+      "min": "38",
+      "sec": "49"
+    },
+    "9": {
+      "sign": "Gemini",
+      "deg": "24",
+      "min": "38",
+      "sec": "49"
+    },
+    "10": {
+      "sign": "Cancer",
+      "deg": "25",
+      "min": "1",
+      "sec": "57"
+    },
+    "11": {
+      "sign": "Leo",
+      "deg": "26",
+      "min": "59",
+      "sec": "55"
+    },
+    "12": {
+      "sign": "Virgo",
+      "deg": "27",
+      "min": "45",
+      "sec": "36"
+    }
+  },
+  "planets": {
+    "Surya": {
+      "sign": "Aries",
+      "deg": "3",
+      "min": "38",
+      "sec": "44"
+    },
+    "Chandra": {
+      "sign": "Sagittarius",
+      "deg": "7",
+      "min": "3",
+      "sec": "2"
+    },
+    "Mangala": {
+      "sign": "Aries",
+      "deg": "9",
+      "min": "40",
+      "sec": "12"
+    },
+    "Rahu": {
+      "sign": "Leo",
+      "deg": "14",
+      "min": "20",
+      "sec": "21"
+    },
+    "Jupiter": {
+      "sign": "Aquarius",
+      "deg": "23",
+      "min": "5",
+      "sec": "33"
+    },
+    "Saturn": {
+      "sign": "Aries",
+      "deg": "0",
+      "min": "8",
+      "sec": "5"
+    },
+    "Budha": {
+      "sign": "Pisces",
+      "deg": "16",
+      "min": "21",
+      "sec": "51"
+    },
+    "Ketu": {
+      "sign": "Aquarius",
+      "deg": "14",
+      "min": "20",
+      "sec": "21"
+    },
+    "Venus": {
+      "sign": "Aquarius",
+      "deg": "18",
+      "min": "20",
+      "sec": "56"
+    }
+  }
+}

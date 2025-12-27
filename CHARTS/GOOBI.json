@@ -1,0 +1,134 @@
+{
+  "personName": "GOOBI",
+  "manualMode": true,
+  "cusps": {
+    "1": {
+      "sign": "Taurus",
+      "deg": "14",
+      "min": "14",
+      "sec": "21"
+    },
+    "2": {
+      "sign": "Gemini",
+      "deg": "10",
+      "min": "36",
+      "sec": "23"
+    },
+    "3": {
+      "sign": "Cancer",
+      "deg": "6",
+      "min": "32",
+      "sec": "57"
+    },
+    "4": {
+      "sign": "Leo",
+      "deg": "4",
+      "min": "56",
+      "sec": "46"
+    },
+    "5": {
+      "sign": "Virgo",
+      "deg": "7",
+      "min": "12",
+      "sec": "06"
+    },
+    "6": {
+      "sign": "Libra",
+      "deg": "11",
+      "min": "30",
+      "sec": "53"
+    },
+    "7": {
+      "sign": "Scorpio",
+      "deg": "14",
+      "min": "14",
+      "sec": "21"
+    },
+    "8": {
+      "sign": "Sagittarius",
+      "deg": "10",
+      "min": "36",
+      "sec": "23"
+    },
+    "9": {
+      "sign": "Capricorn",
+      "deg": "6",
+      "min": "32",
+      "sec": "57"
+    },
+    "10": {
+      "sign": "Aquarius",
+      "deg": "4",
+      "min": "56",
+      "sec": "46"
+    },
+    "11": {
+      "sign": "Pisces",
+      "deg": "7",
+      "min": "12",
+      "sec": "6"
+    },
+    "12": {
+      "sign": "Aries",
+      "deg": "11",
+      "min": "30",
+      "sec": "53"
+    }
+  },
+  "planets": {
+    "Surya": {
+      "sign": "Taurus",
+      "deg": "9",
+      "min": "24",
+      "sec": "15"
+    },
+    "Chandra": {
+      "sign": "Capricorn",
+      "deg": "12",
+      "min": "2",
+      "sec": "50"
+    },
+    "Mangala": {
+      "sign": "Taurus",
+      "deg": "20",
+      "min": "17",
+      "sec": "30"
+    },
+    "Rahu": {
+      "sign": "Cancer",
+      "deg": "3",
+      "min": "40",
+      "sec": "18"
+    },
+    "Jupiter": {
+      "sign": "Aries",
+      "deg": "27",
+      "min": "52",
+      "sec": "32"
+    },
+    "Saturn": {
+      "sign": "Aries",
+      "deg": "28",
+      "min": "22",
+      "sec": "26"
+    },
+    "Budha": {
+      "sign": "Taurus",
+      "deg": "25",
+      "min": "53",
+      "sec": "25"
+    },
+    "Ketu": {
+      "sign": "Capricorn",
+      "deg": "3",
+      "min": "40",
+      "sec": "18"
+    },
+    "Venus": {
+      "sign": "Taurus",
+      "deg": "4",
+      "min": "25",
+      "sec": "45"
+    }
+  }
+}

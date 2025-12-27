@@ -143,6 +143,27 @@ hr{
     );
     margin: 25px 0;
 }
+
+/* =========================================================
+   PERSON NAME INPUT – DARK MODE FIX
+   ========================================================= */
+#personName{
+    background:#020617;          /* black / dark */
+    color:#f8fafc;               /* light text */
+    border:1px solid #334155;    /* same as other inputs */
+    border-radius:6px;
+}
+
+#personName::placeholder{
+    color:#64748b;               /* muted placeholder */
+}
+
+#personName:focus{
+    outline:none;
+    box-shadow:0 0 0 1px #facc15; /* gold focus like theme */
+}
+
+
 </style>
 
 
@@ -159,6 +180,17 @@ hr{
 
 
 <h2>DARSSHAN T.N RESEARCH TOOL FOR CUSPAL INTERLINK</h2>
+
+<label style="display:block;margin:10px 0;font-weight:600">
+Person Name :
+<input
+  type="text"
+  id="personName"
+  placeholder="ENTER NAME (CAPS ONLY)"
+  oninput="this.value = this.value.toUpperCase().replace(/[^A-Z\s]/g,'')"
+  style="margin-left:8px;padding:4px 6px"
+/>
+</label>
 
 <label>
 <input type="checkbox" id="manualMode" checked>
@@ -183,6 +215,269 @@ Manual Cusps (unchecked = Equal cusps from Lagna)
 <button onclick="clearAll()">Clear All</button>
 
 <div id="output"></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- =========================================================
+     D1 RĀŚI KUNDALI – FINAL
+     ========================================================= -->
+
+<style>
+#kundaliControls{
+    display:flex;
+    justify-content:center;
+    gap:22px;
+    margin:22px 0 30px;
+    flex-wrap:wrap;
+    font-weight:700;
+}
+#kundaliZone{display:flex;justify-content:center}
+.kWrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.kTitle{
+    color:#ff9f1c;font-weight:900;letter-spacing:1.6px;
+    text-shadow:0 0 10px rgba(255,159,28,.55)
+}
+.kChart{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    grid-template-rows:repeat(4,1fr);
+    width:540px;aspect-ratio:1/1;
+    background:radial-gradient(circle at top,#1b0a0a,#070303 70%);
+    border:2px solid #a86b17;
+    box-shadow:0 0 30px rgba(255,159,28,.35)
+}
+.kCell{border:1px solid #3a1a12;padding:22px 10px;font-size:13px;position:relative}
+.kCell .hnum{position:absolute;top:4px;left:6px;font-size:14px;font-weight:900;color:#facc15}
+.kCell .plist{display:flex;flex-direction:column;gap:4px;margin-top:18px;margin-bottom:20px;white-space:nowrap}
+.kCell .sign{position:absolute;bottom:4px;right:6px;font-size:13px;font-weight:800;color:#ff9f1c}
+.kBlank{background:#0c0404;border:1px solid #2a0f0f}
+</style>
+
+<div id="kundaliControls">
+    <label>Pivot :
+        <select id="kPivot">
+            <option value="Lagna">Lagna</option>
+            <option value="Surya">Surya</option>
+            <option value="Chandra">Chandra</option>
+            <option value="Mangala">Mangala</option>
+            <option value="Rahu">Rahu</option>
+            <option value="Jupiter">Guru</option>
+            <option value="Saturn">Saturn</option>
+            <option value="Budha">Budha</option>
+            <option value="Ketu">Ketu</option>
+            <option value="Venus">Venus</option>
+        </select>
+    </label>
+    <label><input type="checkbox" id="kpModeK"> KP (0°)</label>
+    <label><input type="checkbox" id="vedicModeK"> Vedic (15°)</label>
+
+    <!-- ===============================
+         RETRO OPTION (KUNDALI ONLY)
+         =============================== -->
+    <label><input type="checkbox" id="retroModeK"> Retro</label>
+</div>
+
+<div id="kundaliZone">
+    <div class="kWrap">
+        <div class="kTitle">D1 – RĀŚI</div>
+        <div id="D1Chart" class="kChart"></div>
+    </div>
+</div>
+
+<script>
+const SI_SIGNS=[
+ "Pisces","Aries","Taurus","Gemini",
+ "Aquarius","","","Cancer",
+ "Capricorn","","","Leo",
+ "Sagittarius","Scorpio","Libra","Virgo"
+];
+const HOUSE_FLOW=[12,1,2,3,11,0,0,4,10,0,0,5,9,8,7,6];
+const DESC_SIGNS=["Sagittarius","Capricorn","Aquarius","Pisces"];
+
+function initChart(){
+    let el=document.getElementById("D1Chart"); el.innerHTML="";
+    SI_SIGNS.forEach((s,i)=>{
+        el.innerHTML+=s?
+        `<div class="kCell" data-sign="${s}" data-idx="${i}">
+            <div class="hnum"></div><div class="plist"></div><div class="sign">${s}</div>
+        </div>`:`<div class="kCell kBlank"></div>`;
+    });
+}
+
+function absDeg(p){
+    return absoluteDeg(
+        signs.indexOf(document.getElementById(p+"_sign").value),
+        document.getElementById(p+"_deg").value,
+        document.getElementById(p+"_min").value,
+        document.getElementById(p+"_sec").value
+    );
+}
+
+function splitDMS(abs){
+    let a=((abs%360)+360)%360;
+    let d=Math.floor((a%30)+1e-9);
+    let mf=(a%1)*60;
+    let m=Math.floor(mf+1e-9);
+    let s=Math.floor(((mf-m)*60)+1e-9);
+    return {d,m,s};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   RETRO HOUSE LOGIC (KUNDALI ONLY)
+   - DOES NOT TOUCH SIGNS
+   - DOES NOT MOVE PLANETS
+   - HOUSE COUNT ONLY
+   ========================================================= */
+function retroHouse(h){
+    return ((14 - h - 1) % 12) + 1;
+}
+
+function drawD1(){
+    document.querySelectorAll("#D1Chart .plist").forEach(p=>p.innerHTML="");
+    document.querySelectorAll("#D1Chart .hnum").forEach(h=>h.innerHTML="");
+
+    let pivot=kPivot.value;
+    let showNums=kpModeK.checked||vedicModeK.checked;
+
+    /* ===============================
+       RETRO FLAG (KUNDALI ONLY)
+       =============================== */
+    let retro=retroModeK.checked;
+
+    let pSign,pAbs;
+
+    if(pivot==="Lagna"){
+        pSign=document.getElementById("c1_sign").value;
+        pAbs=absDeg("c1");
+    }else{
+        pSign=document.getElementById(pivot+"_sign").value;
+        pAbs=absDeg(pivot);
+    }
+
+    let pivotAbs;
+    if(kpModeK.checked){
+        pivotAbs=(signs.indexOf(pSign)-1)*30;
+    }else if(vedicModeK.checked){
+        pivotAbs=(signs.indexOf(pSign)-1)*30+15;
+    }else{
+        pivotAbs=pAbs;
+    }
+
+    /* ===============================
+       HOUSE NUMBER DRAW (RETRO SAFE)
+       =============================== */
+    if(showNums){
+        let lagIdx=[...document.querySelectorAll("#D1Chart [data-sign]")]
+            .find(c=>c.dataset.sign===pSign)?.dataset.idx;
+        document.querySelectorAll("#D1Chart [data-sign]").forEach(c=>{
+            let b=HOUSE_FLOW[c.dataset.idx];
+            if(b){
+                let h=((b-HOUSE_FLOW[lagIdx]+12)%12)+1;
+
+                /* RETRO AFFECTS ONLY HOUSE COUNT */
+                c.querySelector(".hnum").textContent =
+                    retro ? retroHouse(h) : h;
+            }
+        });
+    }
+
+    let buckets={};
+
+    function place(lbl,abs,isPivot=false,isMirror=false){
+        let shifted;
+        if(isPivot){
+            shifted=pivotAbs;
+        }else if(isMirror){
+            shifted=(pivotAbs+180)%360;
+        }else{
+            shifted=(abs-pAbs+pivotAbs+360)%360;
+        }
+
+        let sign=signs[Math.floor(shifted/30)+1];
+        let {d,m,s}=isPivot&&!kpModeK.checked&&!vedicModeK.checked
+            ? splitDMS(abs)
+            : splitDMS(shifted);
+
+        buckets[sign]=buckets[sign]||[];
+        buckets[sign].push({deg:d,text:`${lbl} ${d}°${m}'${s}"`});
+    }
+
+    planets.forEach(p=>{
+        if(p==="Ketu"&&pivot==="Rahu") place("Ketu",absDeg("Ketu"),false,true);
+        else if(p==="Rahu"&&pivot==="Ketu") place("Rahu",absDeg("Rahu"),false,true);
+        else place(p,absDeg(p),p===pivot);
+    });
+
+    if(pivot==="Lagna") place("Lagna",absDeg("c1"),true);
+
+    Object.keys(buckets).forEach(sign=>{
+        let list=buckets[sign];
+        list.sort((a,b)=>DESC_SIGNS.includes(sign)?b.deg-a.deg:a.deg-b.deg);
+        document.querySelectorAll(`#D1Chart [data-sign='${sign}'] .plist`)
+            .forEach(p=>list.forEach(x=>{
+                let d=document.createElement("div");
+                d.textContent=x.text;
+                p.appendChild(d);
+            }));
+    });
+}
+
+initChart();
+[kPivot,kpModeK,vedicModeK,retroModeK].forEach(e=>{
+    e.onchange=()=>{
+        if(e===kpModeK) vedicModeK.checked=false;
+        if(e===vedicModeK) kpModeK.checked=false;
+        drawD1();
+    };
+});
+document.querySelector("button[onclick='buildCuspalChart()']")
+ ?.addEventListener("click",()=>setTimeout(drawD1,0));
+
+drawD1();
+</script>
+
+
+
+
+
+
+
+
 
 
 
@@ -223,40 +518,76 @@ const planets = [
 
 const table = document.getElementById("inputTable");
 
-/* ---------- DEGREE DROPDOWN ---------- */
+/* =========================================================
+   INPUT PATCH (DARK MODE + VALIDATION)
+   ========================================================= */
+
+function attachInputLogic(inp, max){
+    inp.type = "text";
+    inp.maxLength = 2;
+    inp.placeholder = "";
+    inp.style.width = "42px";
+    inp.style.textAlign = "center";
+
+    /* DARK MODE STYLE */
+    inp.style.background = "#020617";
+    inp.style.color = "#f5e9c6";
+    inp.style.border = "1px solid #ca8a04";
+    inp.style.borderRadius = "6px";
+
+    let warn = document.createElement("span");
+    warn.textContent = "!";
+    warn.style.color = "#ef4444";
+    warn.style.marginLeft = "6px";
+    warn.style.fontWeight = "700";
+    warn.style.display = "none";
+    inp.after(warn);
+
+    inp.addEventListener("input", ()=>{
+        inp.value = inp.value.replace(/\D/g,"");
+        let v = Number(inp.value);
+
+        if(inp.value !== "" && v > max){
+            inp.style.background = "#7f1d1d";   /* red background */
+            inp.style.color = "#ffffff";
+            inp.style.border = "1px solid #ef4444";
+            warn.style.display = "inline";
+        }else{
+            inp.style.background = "#020617";  /* back to dark */
+            inp.style.color = "#f5e9c6";
+            inp.style.border = "1px solid #ca8a04";
+            warn.style.display = "none";
+        }
+
+        if(inp.value.length === 2){
+            let all = [...document.querySelectorAll(
+                'input[id$="_deg"],input[id$="_min"],input[id$="_sec"]'
+            )];
+            let idx = all.indexOf(inp);
+            if(all[idx+1]) all[idx+1].focus();
+        }
+    });
+}
+
+/* ---------- DEGREE INPUT ---------- */
 function createDegreeSelect(){
-    let s=document.createElement("select");
-    for(let i=0;i<=29;i++){
-        let o=document.createElement("option");
-        o.value=i;
-        o.text=i.toString().padStart(2,"0");
-        s.appendChild(o);
-    }
-    return s;
+    let i = document.createElement("input");
+    attachInputLogic(i, 29);
+    return i;
 }
 
-/* ---------- MINUTE DROPDOWN ---------- */
+/* ---------- MINUTE INPUT ---------- */
 function createMinuteSelect(){
-    let s=document.createElement("select");
-    for(let i=0;i<=59;i++){
-        let o=document.createElement("option");
-        o.value=i;
-        o.text=i.toString().padStart(2,"0");
-        s.appendChild(o);
-    }
-    return s;
+    let i = document.createElement("input");
+    attachInputLogic(i, 59);
+    return i;
 }
 
-/* ---------- SECOND DROPDOWN ---------- */
+/* ---------- SECOND INPUT ---------- */
 function createSecondSelect(){
-    let s=document.createElement("select");
-    for(let i=0;i<=59;i++){
-        let o=document.createElement("option");
-        o.value=i;
-        o.text=i.toString().padStart(2,"0");
-        s.appendChild(o);
-    }
-    return s;
+    let i = document.createElement("input");
+    attachInputLogic(i, 59);
+    return i;
 }
 
 /* ---------- BUILD 12 CUSPS ---------- */
@@ -342,13 +673,16 @@ manualMode.onchange=()=>{
     }
 };
 manualMode.onchange();
-
 /* =========================================================
-   SAVE JSON
+   SAVE JSON (UPDATED – NAME ONLY)
    ========================================================= */
 function saveJSON(){
 
+    let personName =
+        document.getElementById("personName")?.value.trim() || "UNKNOWN";
+
     let data={
+        personName: personName,
         manualMode: manualMode.checked,
         cusps:{},
         planets:{}
@@ -375,12 +709,12 @@ function saveJSON(){
     let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
     let a=document.createElement("a");
     a.href=URL.createObjectURL(blob);
-    a.download="kp_data.json";
+    a.download=personName + ".json";
     a.click();
 }
 
 /* =========================================================
-   LOAD JSON
+   LOAD JSON (UPDATED – NAME RESTORE)
    ========================================================= */
 function loadJSON(){
 
@@ -392,6 +726,10 @@ function loadJSON(){
         let r=new FileReader();
         r.onload=()=>{
             let d=JSON.parse(r.result);
+
+            if(d.personName && document.getElementById("personName")){
+                document.getElementById("personName").value=d.personName;
+            }
 
             manualMode.checked=d.manualMode;
             manualMode.onchange();
@@ -415,29 +753,39 @@ function loadJSON(){
     f.click();
 }
 
+
 /* =========================================================
-   CLEAR ALL
+   CLEAR ALL (UNCHANGED)
    ========================================================= */
 function clearAll(){
 
     manualMode.checked=true;
     manualMode.onchange();
+	
+	document.getElementById("personName").value = "";
 
     for(let i=1;i<=12;i++){
         document.getElementById("c"+i+"_sign").selectedIndex=0;
-        document.getElementById("c"+i+"_deg").value=0;
-        document.getElementById("c"+i+"_min").value=0;
-        document.getElementById("c"+i+"_sec").value=0;
+        document.getElementById("c"+i+"_deg").value="";
+        document.getElementById("c"+i+"_min").value="";
+        document.getElementById("c"+i+"_sec").value="";
     }
 
     planets.forEach(p=>{
         document.getElementById(p+"_sign").selectedIndex=0;
-        document.getElementById(p+"_deg").value=0;
-        document.getElementById(p+"_min").value=0;
-        document.getElementById(p+"_sec").value=0;
+        document.getElementById(p+"_deg").value="";
+        document.getElementById(p+"_min").value="";
+        document.getElementById(p+"_sec").value="";
     });
 
     document.getElementById("output").innerHTML="";
+}
+
+/* ---------- FILL ALL SECONDS = 0 ---------- */
+function fillAllSeconds(){
+    document.querySelectorAll('input[id$="_sec"]').forEach(i=>{
+        if(i.value==="") i.value="0";
+    });
 }
 </script>
 

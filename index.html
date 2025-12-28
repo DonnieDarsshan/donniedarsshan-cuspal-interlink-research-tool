@@ -1735,9 +1735,13 @@ anchor.before(wrapper);
 
 
 
+
+
+
+
 <!-- =========================================================
      PART 5 : KP TABLE-4 (PIVOT ORDER + SORT FIX FINAL)
-     + VISUAL NUMBER HIDE (NO DOM CHANGE)
+     + VISUAL NUMBER / ROW BLANKING (SAFE)
      ========================================================= -->
 <script>
 /* =========================================================
@@ -1745,11 +1749,7 @@ anchor.before(wrapper);
    ========================================================= */
 function sortHouseString(str){
     if(!str || str === "") return "";
-    return str
-        .split(",")
-        .map(Number)
-        .sort((a,b)=>a-b)
-        .join(",");
+    return str.split(",").map(Number).sort((a,b)=>a-b).join(",");
 }
 
 /* =========================================================
@@ -1770,25 +1770,20 @@ function getPlanetKPLords(p){
 
     let starIndex = getStarIndex(absDeg);
     let degInsideStar = absDeg % 13.3333333333;
-
     let subIndex = getSubIndex(starIndex, degInsideStar);
 
     let subSpan = (vimYears[starCycle[subIndex]] / 120) * 13.3333333333;
-
     let subStart = 0;
     for(let i=0;i<9;i++){
         let lord = starCycle[(starIndex + i) % 9];
-        let span = (vimYears[lord] / 120) * 13.3333333333;
         if((starIndex + i) % 9 === subIndex) break;
-        subStart += span;
+        subStart += (vimYears[lord] / 120) * 13.3333333333;
     }
 
-    let degInsideSub = {
+    let sslIndex = getSSLIndex(subIndex,{
         offset: degInsideStar - subStart,
         totalSpan: subSpan
-    };
-
-    let sslIndex = getSSLIndex(subIndex, degInsideSub);
+    });
 
     return {
         planet: p,
@@ -1799,7 +1794,7 @@ function getPlanetKPLords(p){
 }
 
 /* =========================================================
-   BUILD TABLE-4 (PIVOT ORDERED)
+   BUILD TABLE-4
    ========================================================= */
 function buildTable4(){
 
@@ -1842,7 +1837,6 @@ function buildTable4(){
     <div id="table4">
     <h2>Table-4 : Planet → Star → Sub → Sub-Sub</h2>
 
-    <!-- NUMBER VISIBILITY CONTROLS -->
     <div style="margin:10px 0;">
         <label style="margin-right:20px;">
             <input type="checkbox" id="hideStarNums">
@@ -1854,10 +1848,16 @@ function buildTable4(){
             Hide Sub-Sub Numbers Column
         </label>
 
-        <label>
+        <label style="margin-right:20px;">
             <input type="checkbox" id="hideSSLRowNums">
             Hide Sub-Sub Row Numbers
         </label>
+
+        <label style="margin-right:20px;">
+		<input type="checkbox" id="hideSubRowNums">
+		Hide Sub Lord Row
+	</label>
+
     </div>
     `;
 
@@ -1878,17 +1878,9 @@ function buildTable4(){
         <table style="margin-bottom:20px;">
         <tr>
             <th colspan="7"
-                style="
-                    font-size:20px;
-                    font-weight:700;
-                    text-transform:uppercase;
-                    letter-spacing:1.5px;
-                    color:#ff9f1c;
-                    background:linear-gradient(180deg,#2a0f0f,#140707);
-                    text-shadow:0 0 10px rgba(255,159,28,0.6);
-                    padding:12px 0;
-                    border-bottom:2px solid #a86b17;
-                ">
+                style="font-size:20px;font-weight:700;
+                color:#ff9f1c;background:linear-gradient(180deg,#2a0f0f,#140707);
+                padding:12px;border-bottom:2px solid #a86b17;">
                 ${p}
             </th>
         </tr>
@@ -1905,15 +1897,17 @@ function buildTable4(){
 
         rows.forEach(r=>{
             html += `
-            <tr class="${r.label === "Sub-Sub" ? "ssl-row" : ""}">
+            <tr class="
+                ${r.label === 'Sub Lord' ? 'sub-row' : ''}
+                ${r.label === 'Sub-Sub' ? 'ssl-row' : ''}
+            ">
                 <td>${r.label}</td>
                 <td><b>${r.planet}</b></td>
-				<td class="sub-num">${r.data ? r.data.sub  : ""}</td>
-				<td class="ssl-num row-num">${r.data ? r.data.ssl  : ""}</td>
-				<td class="star-num row-num">${r.data ? r.data.star : ""}</td>
-				<td>${r.data ? r.data.sign : ""}</td>
-				<td>${r.data ? r.data.place: ""}</td>
-
+                <td class="sub-num">${r.data ? r.data.sub  : ""}</td>
+                <td class="ssl-num">${r.data ? r.data.ssl  : ""}</td>
+                <td class="star-num">${r.data ? r.data.star : ""}</td>
+                <td>${r.data ? r.data.sign : ""}</td>
+                <td>${r.data ? r.data.place: ""}</td>
             </tr>
             `;
         });
@@ -1922,10 +1916,10 @@ function buildTable4(){
     });
 
     html += `</div>`;
-    const anchor = document.getElementById("kp-fixed-bottom");
-    anchor.insertAdjacentHTML("beforebegin", html);
+    document.getElementById("kp-fixed-bottom")
+        .insertAdjacentHTML("beforebegin", html);
 
-    /* ---------- VISUAL ONLY HIDING (SAFE) ---------- */
+    /* ---------- VISUAL ONLY HIDING / BLANKING ---------- */
     setTimeout(()=>{
 
         document.getElementById("hideStarNums").onchange = function(){
@@ -1941,27 +1935,31 @@ function buildTable4(){
         };
 
         document.getElementById("hideSSLRowNums").onchange = function(){
-		document.querySelectorAll(".ssl-row td").forEach(cell=>{
-        cell.style.color = this.checked ? "transparent" : "";
-    });
-};
+            document.querySelectorAll(".ssl-row td").forEach(cell=>{
+                cell.style.color = this.checked ? "transparent" : "";
+            });
+        };
+
+        /* 🔥 HIDE SUB LORD ROW = BLANK VALUES ONLY */
+		   document.getElementById("hideSubRowNums").onchange = function(){
+		document.querySelectorAll(".sub-row td").forEach(td=>{
+			td.style.color = this.checked ? "transparent" : "";
+		});
+	};
 
 
-		/* ---------- DEFAULT CHECKED STATE ---------- */
-		const starChk = document.getElementById("hideStarNums");
-		const sslRowChk = document.getElementById("hideSSLRowNums");
 
-		if(starChk){
-		starChk.checked = true;
-		starChk.onchange();
-}
+        /* preserve original values */
+        document.querySelectorAll(".sub-row td").forEach(td=>{
+            td.dataset.orig = td.textContent;
+        });
 
-if(sslRowChk){
-    sslRowChk.checked = true;
-    sslRowChk.onchange();
-}
+        /* DEFAULT STATES (UNCHANGED) */
+        document.getElementById("hideStarNums").checked = true;
+        document.getElementById("hideStarNums").onchange();
 
-
+        document.getElementById("hideSSLRowNums").checked = true;
+        document.getElementById("hideSSLRowNums").onchange();
 
     },0);
 }
@@ -1988,14 +1986,9 @@ if(sslRowChk){
 
 
 
-
-
-
-
 <!-- =========================================================
-     PART 6 : EFFECTIVE LINKS TABLE
+     PART 6 : EFFECTIVE LINKS TABLE (UPDATED – ROW LEVEL CONTROL)
      (HARD-ANCHORED — NEVER MOVES)
-     + Ignore Sub-Sub Lord ROW FEATURE (DEFAULT ON)
      ========================================================= -->
 <script>
 /* =========================================================
@@ -2005,14 +1998,11 @@ function nums(str){
     if(!str || str === "") return [];
     return str.split(",").map(Number).filter(n=>n>=1 && n<=12);
 }
-
 function uniqueSorted(arr){
     return [...new Set(arr)].sort((a,b)=>a-b);
 }
-
 function isEven(n){ return n % 2 === 0; }
 function isOdd(n){ return n % 2 === 1; }
-
 function g1(n){ return [1,4,7,10].includes(n); }
 function g2(n){ return [2,5,8,11].includes(n); }
 function g3(n){ return [3,6,9,12].includes(n); }
@@ -2023,7 +2013,6 @@ function g3(n){ return [3,6,9,12].includes(n); }
 function collectPlanet(p, useStar, useSSL){
     let T3 = window.__T3_CACHE__;
     if(!T3 || !T3[p]) return [];
-
     let out = [];
     out.push(...nums(T3[p].sub));
     if(useStar) out.push(...nums(T3[p].star));
@@ -2032,10 +2021,9 @@ function collectPlanet(p, useStar, useSSL){
 }
 
 /* =========================================================
-   INIT SHELL (ONCE, HARD ANCHORED)
+   INIT SHELL (ONCE)
    ========================================================= */
 function initTable5Shell(){
-
     const root = document.getElementById("kp-fixed-bottom");
     if(!root || root.querySelector("#table5-shell")) return;
 
@@ -2054,6 +2042,11 @@ function initTable5Shell(){
                 Ignore Sub-Sub Lord Column
             </label>
 
+            <label style="margin-right:20px;">
+                <input type="checkbox" id="ignoreSubRow" checked>
+                Ignore Sub Lord Row
+            </label>
+
             <label>
                 <input type="checkbox" id="ignoreSSLRow" checked>
                 Ignore Sub-Sub Lord Row
@@ -2064,9 +2057,10 @@ function initTable5Shell(){
     </div>
     `;
 
-    document.getElementById("ignoreStar").onchange   = buildTable5;
-    document.getElementById("ignoreSSL").onchange    = buildTable5;
-    document.getElementById("ignoreSSLRow").onchange = buildTable5;
+    ["ignoreStar","ignoreSSL","ignoreSubRow","ignoreSSLRow"]
+        .forEach(id=>{
+            document.getElementById(id).onchange = buildTable5;
+        });
 }
 
 /* =========================================================
@@ -2082,7 +2076,7 @@ function getPivotSortedPlanets(){
 }
 
 /* =========================================================
-   BUILD EFFECTIVE LINKS TABLE
+   BUILD TABLE-5 (ROW CORRECT LOGIC)
    ========================================================= */
 function buildTable5(){
 
@@ -2093,6 +2087,7 @@ function buildTable5(){
 
     let useStar      = !document.getElementById("ignoreStar").checked;
     let useSSL       = !document.getElementById("ignoreSSL").checked;
+    let ignoreSubRow = document.getElementById("ignoreSubRow").checked;
     let ignoreSSLRow = document.getElementById("ignoreSSLRow").checked;
 
     let order = getPivotSortedPlanets();
@@ -2121,8 +2116,10 @@ function buildTable5(){
         /* Star row */
         all.push(...collectPlanet(kp.star, useStar, useSSL));
 
-        /* Sub row */
-        all.push(...collectPlanet(kp.sub, useStar, useSSL));
+        /* Sub ROW (CORRECTLY OPTIONAL) */
+        if(!ignoreSubRow){
+            all.push(...collectPlanet(kp.sub, useStar, useSSL));
+        }
 
         /* Sub-Sub ROW (OPTIONAL) */
         if(!ignoreSSLRow){
@@ -2166,6 +2163,17 @@ function buildTable5(){
     };
 })();
 </script>
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -5635,7 +5635,6 @@ function computeTable10DominanceWithSSL(top3Values, sslValues, pVals = [], sVals
 
 
 
-
 function computeTable10Row(p, excludeSublordForGraphs = false) {
     let kp = getPlanetKPLords(p);
     if (!kp) return "";
@@ -5673,59 +5672,24 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
             }
         }
 
-        // RULE 1: Sub-sublord MUST be a "$" (untenanted) planet to be considered.
+        // STRICT RULE: Consider SSL ONLY if Star Lord & Sub Lord are the EXACT SAME planet, and SSL is untenanted ($)
         if (isSslUntenanted) {
-            
-            // Old Rule Intact: Include if Starlord and Sublord are the exact same planet
             if (kp.star && kp.sub && kp.star === kp.sub) {
                 includeSSL = true;
             } 
-            // New Strict Rule: SSL MUST heavily match the Core Family or Core Pattern
-            else {
-                // Temporarily unrotate values to determine the Core's exact Family and Patterns
-                const unrotateTemp = (arr) => arr.map(v => ((v + shift - 1) % 12) + 1);
-                
-                let coreValsTemp = [...new Set([...unrotateTemp(pValsRaw), ...unrotateTemp(sValsRaw), ...unrotateTemp(subValsRaw)])];
-                let coreEvens = coreValsTemp.filter(n => n % 2 === 0).length;
-                let coreOdds = coreValsTemp.filter(n => n % 2 !== 0).length;
-                
-                let sslValsTemp = unrotateTemp(getHBValuesRaw(kp.ssl) || []);
-                let sslEvens = sslValsTemp.filter(n => n % 2 === 0).length;
-                let sslOdds = sslValsTemp.filter(n => n % 2 !== 0).length;
-                
-                let isFamilyMatch = false;
-                
-                if (coreEvens > coreOdds && sslEvens > sslOdds) {
-                    isFamilyMatch = true;
-                } else if (coreOdds > coreEvens && sslOdds > sslEvens) {
-                    isFamilyMatch = true;
-                }
-
-                let isPatternMatch = false;
-                
-                let patterns = [[1,4,7,10], [2,5,8,11], [3,6,9,12]];
-                for (let pat of patterns) {
-                    let corePatCount = coreValsTemp.filter(n => pat.includes(n)).length;
-                    let sslPatCount = sslValsTemp.filter(n => pat.includes(n)).length;
-                    
-                    let coreDominant = corePatCount >= Math.ceil(coreValsTemp.length / 2);
-                    let sslDominant = sslPatCount >= Math.ceil(sslValsTemp.length / 2);
-                    
-                    if (coreDominant && sslDominant && corePatCount > 0 && sslPatCount > 0) {
-                        isPatternMatch = true;
-                        break;
-                    }
-                }
-
-                if (isFamilyMatch || isPatternMatch) {
-                    includeSSL = true;
-                }
-            }
         }
     }
 
     if (typeof T10_INCLUDE_SSL !== 'undefined' && T10_INCLUDE_SSL) {
         includeSSL = true;
+    }
+
+    // ==========================================
+    // 🔥 EXCLUDE SUB-SUBLORD REPETITIONS
+    // ==========================================
+    // Rule: If planet or starlord or sublord is exactly same planet as sub-sub then don't consider
+    if (kp.ssl && (kp.ssl === p || kp.ssl === kp.star || kp.ssl === kp.sub)) {
+        includeSSL = false;
     }
 
     if (includeSSL && kp.ssl) {
@@ -5763,10 +5727,7 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
 
     let finalArrBase = [];
 
-    // ==========================================
-    // THE EXPERT ASTROLOGY COMBINER ENGINE
-    // ==========================================
-
+    // --- HARDCODED EXCEPTIONS / PATTERNS ---
     if (pS==="3,6,12" && stS==="1,7" && subS==="") finalArrBase = [1,3,7];
     else if (pS==="5,8,11" && stS==="9" && subS==="8" && sslS==="3,6,12") finalArrBase = [5,8,11]; 
     else if (pS==="1,4,10" && stS==="2" && subS==="1" && sslS==="5,8,11") finalArrBase = [1,4,10]; 
@@ -5787,17 +5748,19 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
     else if (pS==="3,6,12" && stS==="1,7" && subS==="12") finalArrBase = [1,3,7];
     else if (pS==="2,6,8,12" && stS==="8" && subS==="1") finalArrBase = [2,6,8,12];
     else if (pS==="5" && stS==="2,4,8,10" && subS==="" && sslS==="4,8,12") finalArrBase = [2,4,8,10,12];
-    
     else if (pS==="2,4,8,10" && stS==="2,8,9" && subS==="7" && sslS==="4,8,12") finalArrBase = [2,4,8,10,12];
     else if (pS==="4,8,12" && stS==="" && subS==="2,4,8,10" && sslS==="7") finalArrBase = [2,4,8,10,12];
     else if (pS==="4,8,12" && stS==="11" && subS==="3,9") finalArrBase = [3,9,11];
     else if (pS==="11" && stS==="4,8,12" && subS==="3,9") finalArrBase = [3,9,11];
     else if (stS==="4,8,12" && subS==="3,9" && sslS==="3,9") finalArrBase = [3,9];
+    else if (pS==="2,9" && stS==="4,8" && subS==="7,10") finalArrBase = [4,7,10];
+    else if (pS==="1,5,7,11" && stS==="2,9" && subS==="2,4,8,10") finalArrBase = [1,4,7,10];
+    else if (pS==="5" && stS==="2,4,8,10" && subS==="6,12") finalArrBase = [2,4,6,8,10,12]; // 🔥 Explicit fix applied here
 
     else {
         let core = uniqueSort([...pVals, ...sVals, ...subVals]);
         let all = core; 
-        
+
         let evens = all.filter(n => n % 2 === 0);
         let odds  = all.filter(n => n % 2 !== 0);
         let allEvens = evens;
@@ -5805,35 +5768,94 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
 
         const hasAny = (arr, nums) => nums.some(n => arr.includes(n));
 
+        // ==========================================
+        // 🔥 THE CYCLIC ELIMINATION RULE ENGINE 
+        // ==========================================
         let patterns = [
-            { group: [1,4,7,10], matches: all.filter(n => [1,4,7,10].includes(n)), rank: 1 },
-            { group: [2,5,8,11], matches: all.filter(n => [2,5,8,11].includes(n)), rank: 2 },
-            { group: [3,6,9,12], matches: all.filter(n => [3,6,9,12].includes(n)), rank: 3 }
+            { id: 1, group: [1,4,7,10], matches: all.filter(n => [1,4,7,10].includes(n)), rank: 1 },
+            { id: 2, group: [2,5,8,11], matches: all.filter(n => [2,5,8,11].includes(n)), rank: 2 },
+            { id: 3, group: [3,6,9,12], matches: all.filter(n => [3,6,9,12].includes(n)), rank: 3 }
         ];
 
+        let getScore = (matches) => {
+            let score = 0;
+            matches.forEach(n => {
+                if (strongNums.includes(n)) score += 1000;
+                else if (subVals.includes(n)) score += 600;
+                else if (sVals.includes(n)) score += 200;
+                else if (pVals.includes(n)) score += 100;
+            });
+            return score;
+        };
+
+        patterns.forEach(p => p.score = getScore(p.matches));
+
+        let activePatterns = patterns.filter(p => p.matches.length > 0);
+        let strongAttackers = activePatterns.filter(p => p.matches.length >= 2 || p.matches.some(n => strongNums.includes(n)));
+        let eliminatedIds = new Set();
+        
+        strongAttackers.forEach(attacker => {
+            if (attacker.id === 1) eliminatedIds.add(3); 
+            if (attacker.id === 2) eliminatedIds.add(1); 
+            if (attacker.id === 3) eliminatedIds.add(2); 
+        });
+
+        if (eliminatedIds.size > 0 && eliminatedIds.size < activePatterns.length) {
+            patterns.forEach(p => {
+                if (eliminatedIds.has(p.id)) {
+                    p.score = -1000; 
+                }
+            });
+        }
+
         patterns.sort((a, b) => {
-            let getScore = (matches) => {
-                let score = 0;
-                matches.forEach(n => {
-                    if (strongNums.includes(n)) score += 1000;
-                    else if (subVals.includes(n)) score += 600;
-                    else if (sVals.includes(n)) score += 200;
-                    else if (pVals.includes(n)) score += 100;
-                });
-                return score;
-            };
-
-            let scoreA = getScore(a.matches);
-            let scoreB = getScore(b.matches);
-
-            if (scoreA !== scoreB) return scoreB - scoreA;
+            if (a.score !== b.score) return b.score - a.score;
             if (b.matches.length !== a.matches.length) return b.matches.length - a.matches.length;
             return a.rank - b.rank; 
         });
 
         let bestPattern = patterns[0];
 
-        if (bestPattern.matches.length === 4 && hasAny(core, bestPattern.group)) {
+        // --- NEW DYNAMIC RULES FOR STRONG ($) SYMBOL DOMINANCE ---
+        let strongEvensCount = evens.filter(n => strongNums.includes(n)).length;
+        let strongOddsCount  = odds.filter(n => strongNums.includes(n)).length;
+        let weakEvensCount   = evens.filter(n => !strongNums.includes(n)).length;
+        let weakOddsCount    = odds.filter(n => !strongNums.includes(n)).length;
+
+        let pStrong = pVals.filter(n => strongNums.includes(n));
+        let sSubWeak = [...sVals, ...subVals].filter(n => !strongNums.includes(n));
+        let pPattern = patterns.find(pat => pStrong.filter(n => pat.group.includes(n)).length >= 2);
+
+        let patternOverride = false;
+        if (patterns[0].matches.length >= 3) {
+            let tieExists = patterns.filter(p => p.matches.length === patterns[0].matches.length).length > 1;
+            if (!tieExists && patterns[0].matches.some(n => strongNums.includes(n))) {
+                patternOverride = true;
+            }
+        }
+
+        let massiveParityDominance = (evens.length >= odds.length + 3) || (odds.length >= evens.length + 3);
+        let pStrongEvens = pStrong.filter(n => n % 2 === 0).length;
+        let pStrongOdds  = pStrong.filter(n => n % 2 !== 0).length;
+        let sSubWeakEvens = sSubWeak.filter(n => n % 2 === 0).length;
+        let sSubWeakOdds  = sSubWeak.filter(n => n % 2 !== 0).length;
+
+        let isSameParityCombine = false;
+        if (pStrong.length > 0) {
+            if (pStrongEvens === pStrong.length && sSubWeakEvens >= 2) isSameParityCombine = true;
+            if (pStrongOdds === pStrong.length && sSubWeakOdds >= 2) isSameParityCombine = true;
+        }
+
+        if (strongEvensCount > 0 && strongEvensCount === evens.length && weakOddsCount === odds.length && strongOddsCount === 0 && !patternOverride) {
+            finalArrBase = allEvens;
+        }
+        else if (strongOddsCount > 0 && strongOddsCount === odds.length && weakEvensCount === evens.length && strongEvensCount === 0 && !patternOverride) {
+            finalArrBase = allOdds;
+        }
+        else if (pPattern && sSubWeak.length > 0 && !sSubWeak.some(n => pPattern.group.includes(n)) && !isSameParityCombine && !massiveParityDominance) {
+            finalArrBase = pPattern.matches.filter(n => pStrong.includes(n));
+        }
+        else if (bestPattern.matches.length === 4 && hasAny(all, bestPattern.group)) {
             finalArrBase = bestPattern.matches;
         }
         else if (evens.length >= odds.length + 3) {
@@ -5842,7 +5864,7 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
         else if (odds.length >= evens.length + 3) {
             finalArrBase = allOdds;
         }
-        else if (bestPattern.matches.length >= 3 && hasAny(core, bestPattern.group)) {
+        else if (bestPattern.matches.length >= 3 && hasAny(all, bestPattern.group)) {
             let hasStrongNum = bestPattern.matches.some(n => strongNums.includes(n));
             
             if (hasStrongNum) {
@@ -5862,6 +5884,47 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
         else if (odds.length >= evens.length + 2) {
             finalArrBase = allOdds;
         }
+        else if (evens.length === 1 && odds.length === 1) {
+            let e = evens[0];
+            let o = odds[0];
+            
+            // ==========================================
+            // 🔥 DEADLY OPPOSITE NUMBERS (1 vs 1 ONLY)
+            // ==========================================
+            let killersMap = {
+                1: [8, 12], 2: [9, 1], 3: [10, 2], 4: [11, 3], 
+                5: [12, 4], 6: [1, 5], 7: [2, 6], 8: [3, 7], 
+                9: [4, 8], 10: [5, 9], 11: [6, 10], 12: [7, 11]
+            };
+
+            let eIsStrong = strongNums.includes(e);
+            let oIsStrong = strongNums.includes(o);
+
+            let eKillsO = killersMap[o] && killersMap[o].includes(e);
+            let oKillsE = killersMap[e] && killersMap[e].includes(o);
+
+            if (eKillsO && !oKillsE) {
+                if (eIsStrong || !oIsStrong) finalArrBase = allEvens;
+                else finalArrBase = allOdds;
+            } else if (oKillsE && !eKillsO) {
+                if (oIsStrong || !eIsStrong) finalArrBase = allOdds;
+                else finalArrBase = allEvens;
+            } else {
+                if (o === 1 && e === 2) finalArrBase = allOdds;
+                else if (e === 2 && o === 3) finalArrBase = allEvens;
+                else if (o === 3 && e === 4) finalArrBase = allOdds;
+                else if (e === 4 && o === 5) finalArrBase = allEvens;
+                else if (o === 5 && e === 6) finalArrBase = allOdds;
+                else if (e === 6 && o === 7) finalArrBase = allEvens;
+                else if (o === 7 && e === 8) finalArrBase = allOdds;
+                else if (e === 8 && o === 9) finalArrBase = allEvens;
+                else if (o === 9 && e === 10) finalArrBase = allOdds;
+                else if (e === 12 && o === 1) finalArrBase = allEvens;
+                else {
+                    finalArrBase = allEvens; 
+                }
+            }
+        }
         else if (subVals.length > 0) {
             let subEvens = subVals.filter(n => n % 2 === 0).length;
             let subOdds  = subVals.filter(n => n % 2 !== 0).length;
@@ -5872,8 +5935,7 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
                 if (odds.length > evens.length) finalArrBase = allOdds;
                 else if (evens.length > odds.length) finalArrBase = allEvens;
                 else {
-                    if (all.includes(1) && all.includes(2) && evens.length === 1 && odds.length === 1) finalArrBase = allOdds;
-                    else finalArrBase = allEvens;
+                    finalArrBase = allEvens;
                 }
             }
         }
@@ -5887,15 +5949,12 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
                 if (odds.length > evens.length) finalArrBase = allOdds;
                 else if (evens.length > odds.length) finalArrBase = allEvens;
                 else {
-                    if (all.includes(1) && all.includes(2) && evens.length === 1 && odds.length === 1) finalArrBase = allOdds;
-                    else finalArrBase = allEvens;
+                    finalArrBase = allEvens;
                 }
             }
         }
         else {
-            if (evens.length === 1 && odds.length === 1 && evens.includes(2) && odds.includes(1)) {
-                finalArrBase = [1];
-            } else if (evens.length > odds.length) {
+            if (evens.length > odds.length) {
                 finalArrBase = allEvens;
             } else if (odds.length > evens.length) {
                 finalArrBase = allOdds;
@@ -5914,47 +5973,40 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
     let additions = [];
 
     // ==========================================
-    // 🔥 NEW: ANTI-100% SCORE OVERLOAD RULE
+    // 🔥 ANTI-100% SCORE OVERLOAD RULE
     // ==========================================
     let baseFullPatterns = [];
     let standardPatterns = [[1,4,7,10], [2,5,8,11], [3,6,9,12]];
     
-    // Check if the base result ALREADY contains a full winning pattern
     for (let pat of standardPatterns) {
         if (pat.every(n => finalArrPivot.includes(n))) {
             baseFullPatterns.push(pat);
         }
     }
 
-    // Helper to safely add pre-rotated toppings while preventing score overload
     function addRotatedTopping(rotatedVals) {
         if (!rotatedVals || rotatedVals.length === 0) return;
         let vals = uniqueSort(rotatedVals);
         
-        // If the base result is already strong (has a full pattern), 
-        // strictly REJECT any topping numbers that belong to other patterns.
         if (baseFullPatterns.length > 0) {
             vals = vals.filter(n => baseFullPatterns.some(pat => pat.includes(n)));
         }
 
         if (vals.length > 0) {
             let str = vals.join(",");
-            let isSubset = vals.every(n => finalArrPivot.includes(n)); // Prevent redundant visual clutter
+            let isSubset = vals.every(n => finalArrPivot.includes(n)); 
             if (str && !additions.includes(str) && str !== baseResult && !isSubset) {
                 additions.push(str);
             }
         }
     }
 
-    // 🔥 Add Sub-Sublord as an independent topping
     if (includeSSL && sslVals.length > 0) {
-        if (!window.T10_EXCLUDE_SUBSUB_RULE) { // 🔥 Blocks the + behavior if ON
-            // sslVals is unrotated, so we rotate it before checking
+        if (!window.T10_EXCLUDE_SUBSUB_RULE) { 
             addRotatedTopping(rotate(sslVals));
         }
     }
 
-    // Append bypassed Star Lord, Sub Lord, OR Sub-Sub Lord values conditionally
     if (typeof T10_ADD_STARLORD !== 'undefined' || typeof T10_ADD_SUBSUB !== 'undefined' || typeof T10_ADD_SUBLORD !== 'undefined') {
         let T3 = window.__T3_CACHE__;
         
@@ -5965,7 +6017,6 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
         if (T3) {
             chain.forEach(ent => {
                 if (T3[ent]) {
-                    // These values from T3 are already Pivot-Rotated
                     let entSubVals = String(T3[ent].sub || "").split(",").filter(n=>n).map(Number);
                     let entSslVals = String(T3[ent].ssl || "").split(",").filter(n=>n).map(Number);
                     let entStarVals = String(T3[ent].star || "").split(",").filter(n=>n).map(Number);
@@ -5985,7 +6036,7 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
                         }
                     } else if (typeof T10_ADD_SUBSUB !== 'undefined' && T10_ADD_SUBSUB) {
                         if (!includeSSL && entSslVals.length > 0) {
-                            if (!window.T10_EXCLUDE_SUBSUB_RULE) { // 🔥 Blocks the + behavior if ON
+                            if (!window.T10_EXCLUDE_SUBSUB_RULE) { 
                                 addRotatedTopping(entSslVals);
                             }
                         }
@@ -6001,6 +6052,18 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
     
     return baseResult;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6476,6 +6539,12 @@ function buildTable9(){
         </div> 
     </div> 
     `;
+
+
+
+
+	
+
     /* ==================== END OF TABLE 36 ==================== */
 
     // NOW CLOSE TABLE 34 COMPLETELY (This closes the #table10-body and #table10-content divs)
@@ -6863,204 +6932,193 @@ function mergeLionSheep(sheepVals, lionVals) {
 
 
 
+
+
 /* ---------- MAIN COMPUTE FOR TABLE 9 ---------- */
-function computeEffectiveLinksRow(p){
+function computeEffectiveLinksRow(p) {
 
     let kp = getPlanetKPLords(p);
-    if(!kp) return {A:"", B:"", C:""};
+    if (!kp) return { A: "", B: "", C: "" };
 
     let starOfSub = getPlanetKPLords(kp.sub)?.star || null;
     let starOfSSL = getPlanetKPLords(kp.ssl)?.star || null;
 
-	/* =============================
-	   UNTENANTED CHECK PER LEVEL
-	   ============================= */
-	let planetUntenanted =
-		typeof formatHBPlanet === "function" &&
-		formatHBPlanet(p)?.includes("$");
+    /* =============================
+       UNTENANTED CHECK PER LEVEL
+       ============================= */
+    let planetUntenanted = typeof formatHBPlanet === "function" && formatHBPlanet(p)?.includes("$");
+    let subUntenanted = typeof formatHBPlanet === "function" && formatHBPlanet(kp.sub)?.includes("$");
+    let sslUntenanted = typeof formatHBPlanet === "function" && formatHBPlanet(kp.ssl)?.includes("$");
 
-	let subUntenanted =
-		typeof formatHBPlanet === "function" &&
-		formatHBPlanet(kp.sub)?.includes("$");
-
-	let sslUntenanted =
-		typeof formatHBPlanet === "function" &&
-		formatHBPlanet(kp.ssl)?.includes("$");
-
-	/* =============================
-	   PART BUILD (WITH LION KILLS SHEEP DOMINANCE)
-	   ============================= */
-	let partA = [];
-	let partB = [];
-	let partC = [];
-	
-	let srcA = [p];
-	let srcB = [kp.sub];
-	let srcC = [kp.ssl];
-
-	/* ---- 1. GET RAW ARRAYS FIRST ---- */
+    /* ---- 1. GET RAW ARRAYS FIRST ---- */
     let valsA1 = getHBValuesRaw(p) || [];
     let valsA2 = kp.star ? (getHBValuesRaw(kp.star) || []) : [];
-    
+
     let valsB1 = getHBValuesRaw(kp.sub) || [];
     let valsB2 = starOfSub ? (getHBValuesRaw(starOfSub) || []) : [];
-    
+
     let valsC1 = getHBValuesRaw(kp.ssl) || [];
     let valsC2 = starOfSSL ? (getHBValuesRaw(starOfSSL) || []) : [];
 
-    // 🔥 NEW UNTENANTED RULE LOGIC
-    // If ON: Tenanted (No $) = Ignore Planet/Sub/SSL, use ONLY Star. 
-    // Untenanted ($) = Keep BOTH.
-    if (HB_UNTENANTED_RULE) {
+    let srcA = [p];
+    let srcB = [kp.sub];
+    let srcC = [kp.ssl];
+
+    // Handle Optional Untenanted Exclusions
+    if (typeof HB_UNTENANTED_RULE !== 'undefined' && HB_UNTENANTED_RULE) {
         if (!planetUntenanted) { valsA1 = []; srcA = []; }
         if (!subUntenanted) { valsB1 = []; srcB = []; }
         if (!sslUntenanted) { valsC1 = []; srcC = []; }
     }
 
-	/* =========================================
-	   2. EXCEPTION RULE (FIGHT BEFORE PARITY FILTER)
-	   ========================================= */
-	if (HB_EXCEPTION_RULE) {
-		const badMap = {
-			1: [8, 12], 2: [9, 1], 3: [10, 2], 4: [11, 3],
-			5: [12, 4], 6: [1, 5], 7: [2, 6], 8: [3, 7],
-			9: [4, 8], 10: [5, 9], 11: [6, 10], 12: [7, 11]
-		};
-
-        // Let them fight in the raw combined pool
-		const applyException = (arr1, arr2) => {
+    // Apply Hard Exception Overrides First
+    if (typeof HB_EXCEPTION_RULE !== 'undefined' && HB_EXCEPTION_RULE) {
+        const badMap = {
+            1: [8, 12], 2: [9, 1], 3: [10, 2], 4: [11, 3],
+            5: [12, 4], 6: [1, 5], 7: [2, 6], 8: [3, 7],
+            9: [4, 8], 10: [5, 9], 11: [6, 10], 12: [7, 11]
+        };
+        const applyException = (arr1, arr2) => {
             let pool = [...arr1, ...arr2];
             let newArr1 = arr1.filter(v => !badMap[v]?.some(bad => pool.includes(bad)));
             let newArr2 = arr2.filter(v => !badMap[v]?.some(bad => pool.includes(bad)));
             return { a1: newArr1, a2: newArr2 };
         };
-
-        let resA = applyException(valsA1, valsA2);
-        valsA1 = resA.a1; valsA2 = resA.a2;
-
-        let resB = applyException(valsB1, valsB2);
-        valsB1 = resB.a1; valsB2 = resB.a2;
-
-        let resC = applyException(valsC1, valsC2);
-        valsC1 = resC.a1; valsC2 = resC.a2;
-	}
-
-	/* ---- 3. APPLY PARITY DOMINANCE (MERGE) ---- */
-    partA = mergeLionSheep(valsA1, valsA2);
-    if(valsA2.length) srcA.push(kp.star);
-
-    partB = mergeLionSheep(valsB1, valsB2);
-    if(valsB2.length) srcB.push(starOfSub);
-
-    partC = mergeLionSheep(valsC1, valsC2);
-    if(valsC2.length) srcC.push(starOfSSL);
-
-
-
-
-
-
-
-
-
-/* =========================================
-       4. FINAL DOMINANCE RESOLUTION (COMPETITIVE SIMULTANEOUS)
-       ========================================= */
-    function resolveDominance(sheepVals, lionVals) {
-        let values = mergeLionSheep(sheepVals, lionVals);
-        if (!values || !values.length) return [];
-        
-        // 1. Mixed Mode ALWAYS triggers the "+" separated format
-        if (HB_MIXED) {
-            return mixedStructural(values);
-        }
-        
-        let combined = [];
-
-        // 2. COMPETITION MODE: Both are checked, find the dominant one
-        if (HB_PATTERN && HB_EVENODD) {
-            let pOut = patternDominance(values);
-            let eOut = evenOddDominance(values);
-
-            let pE = pOut.filter(x => x % 2 === 0).length;
-            let pO = pOut.filter(x => x % 2 !== 0).length;
-            let pMax = Math.max(pE, pO);
-
-            let eE = eOut.filter(x => x % 2 === 0).length;
-            let eO = eOut.filter(x => x % 2 !== 0).length;
-            let eMax = Math.max(eE, eO);
-
-            // 🔥 NEW: LION OVERLAP CHECK
-            // We check which result respects the Lion (Higher-Level Planet) more.
-            let pLionOverlap = 0;
-            let eLionOverlap = 0;
-            
-            if (lionVals && lionVals.length > 0) {
-                pLionOverlap = pOut.filter(x => lionVals.includes(x)).length;
-                eLionOverlap = eOut.filter(x => lionVals.includes(x)).length;
-            }
-
-            // --- TIE BREAKER HIERARCHY ---
-            // 1. Does one outcome preserve the Lion's numbers better?
-            if (pLionOverlap > eLionOverlap) {
-                combined = pOut;
-            } else if (eLionOverlap > pLionOverlap) {
-                combined = eOut;
-            } 
-            // 2. If Lion Overlaps are tied (or no Lion exists), fall back to Length
-            else if (pOut.length > eOut.length) {
-                combined = pOut;
-            } else if (eOut.length > pOut.length) {
-                combined = eOut;
-            } 
-            // 3. If Lengths are tied, fall back to Parity Purity
-            else if (eMax > pMax) {
-                combined = eOut;
-            } else if (pMax > eMax) {
-                combined = pOut;
-            } 
-            // 4. If Parity Purity is tied, fall back to absolute Even counts
-            else if (eE > pE) {
-                combined = eOut;
-            } else if (pE > eE) {
-                combined = pOut;
-            } else {
-                combined = eOut; // Ties go to Even-Odd
-            }
-        }
-        // 3. INDIVIDUAL MODES
-        else if (HB_PATTERN) {
-            combined = patternDominance(values);
-        }
-        else if (HB_EVENODD) {
-            combined = evenOddDominance(values);
-        }
-        else {
-            combined = values;
-        }
-        
-        return [uniqueSorted(combined)]; // Output as normal array, no "+"
+        let resA = applyException(valsA1, valsA2); valsA1 = resA.a1; valsA2 = resA.a2;
+        let resB = applyException(valsB1, valsB2); valsB1 = resB.a1; valsB2 = resB.a2;
+        let resC = applyException(valsC1, valsC2); valsC1 = resC.a1; valsC2 = resC.a2;
     }
-	
-	
-	
-	let A = resolveDominance(valsA1, valsA2);
-	let B = resolveDominance(valsB1, valsB2);
-	let C = resolveDominance(valsC1, valsC2);
 
-	let outA = formatEffectiveDisplay(A);
-	let outB = formatEffectiveDisplay(B);
-	let outC = formatEffectiveDisplay(C);
+    /* =========================================
+       🔥 THE REFINED DOMINANCE ENGINE 🔥
+       ========================================= */
+    function resolveLionSheep(lionVals, sheepVals, isLionStrong) {
+        if (!lionVals || lionVals.length === 0) return sheepVals || [];
+        if (!sheepVals || sheepVals.length === 0) return lionVals || [];
 
-	return {
-		A: splitBySourceLevel(srcA, outA),
-		B: splitBySourceLevel(srcB, outB),
-		C: splitBySourceLevel(srcC, outC)
-	};
+        let L = uniqueSorted(lionVals);
+        let S = uniqueSorted(sheepVals);
+        let combined = uniqueSorted([...L, ...S]);
+
+        const isAllEven = arr => arr.length > 0 && arr.every(n => n % 2 === 0);
+        const isAllOdd  = arr => arr.length > 0 && arr.every(n => n % 2 !== 0);
+
+        // RULE 1: DUSTHANA ATTRACTION HARD RULE (6,8,12)
+        // Only triggers to protect 6,8,12 from being spoiled by 5 and 11.
+        if (combined.includes(6) && combined.includes(8) && combined.includes(12)) {
+            if ((L.includes(5) || S.includes(5)) && (L.includes(11) || S.includes(11))) {
+                return [6, 8, 12];
+            }
+        }
+
+        // RULE 2: SAME PARITY MERGING (Both Even or Both Odd)
+        // e.g. 4,6,10,12 + 8 => 4,6,8,10,12
+        if ((isAllEven(L) && isAllEven(S)) || (isAllOdd(L) && isAllOdd(S))) {
+            return combined;
+        }
+
+        // RULE 3: PARITY QUANTITY DOMINANCE + STRENGTH ($)
+        // e.g. 3,7,9$ vs 6,12 => 3,7,9
+        if (isLionStrong) {
+            if ((isAllEven(L) && isAllOdd(S)) || (isAllOdd(L) && isAllEven(S))) {
+                if (L.length >= S.length || L.length >= 3) {
+                    return L; 
+                }
+            }
+        }
+
+        // RULE 4: EQUAL PARITY PATTERN FORMATION (2 vs 2)
+        // e.g. 3,9$ + 6,12 => 3,6,9,12
+        if (L.length === 2 && S.length === 2) {
+            if ((isAllEven(L) && isAllOdd(S)) || (isAllOdd(L) && isAllEven(S))) {
+                const patterns = [[1, 4, 7, 10], [2, 5, 8, 11], [3, 6, 9, 12]];
+                for (let pat of patterns) {
+                    if (combined.every(n => pat.includes(n))) return combined;
+                }
+            }
+        }
+
+        // RULE 5: 12TH HOUSE SPOILING / ELIMINATION
+        let finalSet = [...combined];
+        const eliminates = (killer, victim) => (killer === 12 ? 1 : killer + 1) === victim;
+
+        let toRemove = new Set();
+        for (let i = 0; i < combined.length; i++) {
+            for (let j = 0; j < combined.length; j++) {
+                if (i === j) continue;
+                let numA = combined[i];
+                let numB = combined[j];
+
+                if (eliminates(numA, numB)) { // numA kills numB
+                    let aIsLion = L.includes(numA);
+                    let bIsLion = L.includes(numB);
+
+                    if (isLionStrong) {
+                        if (aIsLion && !bIsLion) {
+                            toRemove.add(numB); // Strong Lion kills Sheep
+                        } else if (!aIsLion && bIsLion) {
+                            toRemove.add(numA); // Sheep tries to kill Strong Lion -> Fails! Sheep dies instead.
+                        }
+                    } else {
+                        toRemove.add(numB); // Standard elimination
+                    }
+                }
+            }
+        }
+
+        let survived = finalSet.filter(n => !toRemove.has(n));
+        if (survived.length > 0 && survived.length < combined.length) {
+            return survived;
+        }
+
+        // RULE 6: FALLBACK TO STANDARD PATTERN DOMINANCE
+        if (typeof HB_MIXED !== 'undefined' && HB_MIXED) {
+            let mixedRes = mixedStructural(combined);
+            if (mixedRes.length > 1) return mixedRes;
+            return mixedRes[0] || combined;
+        }
+
+        let pOut = patternDominance(combined);
+        let eOut = evenOddDominance(combined);
+
+        if (isLionStrong) {
+            let pHasL = pOut.some(n => L.includes(n));
+            let eHasL = eOut.some(n => L.includes(n));
+            if (pHasL && !eHasL) return pOut;
+            if (eHasL && !pHasL) return eOut;
+        }
+
+        return pOut.length >= eOut.length ? pOut : eOut;
+    }
+
+    // Apply the Refined Engine
+    let partA = resolveLionSheep(valsA1, valsA2, planetUntenanted);
+    if (valsA2.length) srcA.push(kp.star);
+
+    let partB = resolveLionSheep(valsB1, valsB2, subUntenanted);
+    if (valsB2.length) srcB.push(starOfSub);
+
+    let partC = resolveLionSheep(valsC1, valsC2, sslUntenanted);
+    if (valsC2.length) srcC.push(starOfSSL);
+
+    let formatResult = (res) => {
+        // Formats mixed/nested Arrays natively, otherwise standard Join
+        if (Array.isArray(res) && res.length > 0 && Array.isArray(res[0])) {
+            return res.map(cluster => cluster.join(",")).join(" + ");
+        }
+        return formatEffectiveDisplay(res);
+    };
+
+    let outA = formatResult(partA);
+    let outB = formatResult(partB);
+    let outC = formatResult(partC);
+
+    return {
+        A: splitBySourceLevel(srcA, outA),
+        B: splitBySourceLevel(srcB, outB),
+        C: splitBySourceLevel(srcC, outC)
+    };
 }
-
-
-
 
 
 

@@ -2262,7 +2262,6 @@ function saveJSON(){
 
 
 
-
 /* =========================================================
    RESET ALL TOGGLES & CHECKBOXES TO FACTORY DEFAULTS
    ========================================================= */
@@ -2272,10 +2271,10 @@ function resetAllTogglesToDefault() {
     window.T10_ADD_STARLORD = true;
     window.T10_ADD_SUBLORD = false;
     window.T10_ADD_SUBSUB = false;
-    window.T10_EXCLUDE_SUBSUB_RULE = false; // 🔥 Added
+    window.T10_EXCLUDE_SUBSUB_RULE = false; 
     window.T10_INCLUDE_SSL = false;
 
-    window.HB_IGNORE_STAR = false; // 🔥 CHANGED: Ensure it stays OFF on reset
+    window.HB_IGNORE_STAR = false; 
     window.HB_IGNORE_SSL = false;
     window.HB_USE_PLACEMENT = false;
     window.HB_SHOW_LEGENDS = false;
@@ -2299,7 +2298,7 @@ function resetAllTogglesToDefault() {
         { id: "t10_add_starlord", val: true },
         { id: "t10_add_sublord", val: false },
         { id: "t10_add_subsub", val: false },
-        { id: "t10_exclude_subsub_rule", val: false }, // 🔥 Added
+        { id: "t10_exclude_subsub_rule", val: false }, 
         { id: "t10_include_ssl", val: false },
         { id: "hbPlacementToggle", val: false },
         { id: "hb_evenodd", val: false }, 
@@ -2314,8 +2313,6 @@ function resetAllTogglesToDefault() {
         { id: "showCuspsD1", val: false },
         { id: "vedicMode", val: false },
         { id: "retroMode", val: false },
-        // 🔥 kpAyanamshaMode, trueNodeModeKP, and kpLevelTheme HAVE BEEN DELETED FROM THIS LIST!
-        // This stops the system from instantly forcing them back to "true" when the server finishes fetching!
         { id: "countRepetition", val: false },
         { id: "ignoreStar", val: false }, 
         { id: "ignoreSSL", val: false },
@@ -2327,14 +2324,17 @@ function resetAllTogglesToDefault() {
         { id: "t6_ignoreSOSS", val: false },
         { id: "t50CenterAlign", val: false },
         { id: "t50Untenanted", val: true },
-        { id: "t50_show_extra_stars", val: false }
+        { id: "t50_show_extra_stars", val: false },
+        // 🔥 TABLE 53 RESET TRIGGERS 🔥
+        { id: "t53CenterAlign", val: false },
+        { id: "t53Untenanted", val: false },
+        { id: "t53_show_extra_stars", val: true }
     ];
 
     toggles.forEach(t => {
         let el = document.getElementById(t.id);
         if (el) {
             el.checked = t.val;
-            // No dispatchEvent here, so it resets silently without triggering infinite loops
         }
     });
 
@@ -2350,7 +2350,8 @@ function resetAllTogglesToDefault() {
         "taraSelect_mirror": "SSL_CHANDRA",
         "jumpMode": "sec",
         "t50PivotMirror": "Lagna",
-        "miniPivotSelect": "Lagna" // <-- ADDED THIS LINE
+        "miniPivotSelect": "Lagna",
+        "t53PivotMirror": "Lagna" // 🔥 Added T53 Pivot Reset
     };
 
     for (let id in dropdowns) {
@@ -2358,8 +2359,6 @@ function resetAllTogglesToDefault() {
         if (el) el.value = dropdowns[id];
     }
 }
-
-
 
 
 
@@ -2451,6 +2450,12 @@ function loadJSON(){
 }
 
 
+
+
+
+
+
+
 /* =========================================================
    CLEAR ALL (NUCLEAR PURGE FOR NEW CHARTS)
    ========================================================= */
@@ -2466,7 +2471,12 @@ function clearAll(){
     if(typeof TARA_MANUAL_LOCK !== 'undefined') TARA_MANUAL_LOCK = false;
     window.__T3_CACHE__ = {};
 
-    /* 🔥 WIPE CUSPS DATA TO PREVENT OLD CHART SURVIVING */
+    /* 🔥 RESET TABLE 53 MEMORY STATE SO BUTTONS UNSELECT 🔥 */
+    if (typeof t53State !== 'undefined') {
+        t53State = { dasha: null, bukthi: null, antara: null };
+    }
+
+    /* WIPE CUSPS DATA TO PREVENT OLD CHART SURVIVING */
     if (typeof cuspsData !== 'undefined') cuspsData = [];
 
     /* ENABLE + CLEAR DATE & TIME */
@@ -2506,7 +2516,7 @@ function clearAll(){
         if(ed) ed.value = "";
     }
 
-    /* 🔥 THE NUCLEAR PURGE: CLEAR ALL DYNAMIC HTML CONTAINERS 🔥 */
+    /* THE NUCLEAR PURGE: CLEAR ALL DYNAMIC HTML CONTAINERS */
     if(document.getElementById("output")) document.getElementById("output").innerHTML = "";
     if(document.getElementById("pivotCuspalTable")) document.getElementById("pivotCuspalTable").innerHTML = "";
     
@@ -2526,12 +2536,11 @@ function clearAll(){
     if(typeof isEffLinksDashaLoaded !== "undefined") isEffLinksDashaLoaded = false;
     if(typeof INITIAL_BIRTH_DASHA_EFF !== "undefined") INITIAL_BIRTH_DASHA_EFF = null;
 
-    /* 🔥 WIPE TABLE 50 AND 80 GRIDS SO OLD DATA DOES NOT SURVIVE */
+    /* WIPE GRIDS SO OLD DATA DOES NOT SURVIVE */
     if(document.getElementById("t50GridContainer")) document.getElementById("t50GridContainer").innerHTML = "";
     if(document.getElementById("planets-matcher-body")) document.getElementById("planets-matcher-body").innerHTML = "";
     if(document.getElementById("cuspal-matcher-body")) document.getElementById("cuspal-matcher-body").innerHTML = "";
 
-    /* 🔥 WIPE TABLE 50 SORT DROPDOWN SO IT RESETS TO CHANDRA STARLORD ON NEW CHART */
     let t50Sort = document.getElementById("t50SortSelect");
     if(t50Sort) t50Sort.innerHTML = "";
 
@@ -5114,7 +5123,7 @@ let HB_PATTERN = true;        // Turned ON
 let HB_MIXED = false;
 
 let HB_ATTRACTION_MODE = false;
-let HB_USE_PLACEMENT = false;
+let HB_USE_PLACEMENT = true;
 let HB_SHOW_STARS = false;
 let HB_SPLIT_SOURCE = false;
 let HB_SHOW_LEGENDS = false;  
@@ -5822,6 +5831,14 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
         let weakEvensCount   = evens.filter(n => !strongNums.includes(n)).length;
         let weakOddsCount    = odds.filter(n => !strongNums.includes(n)).length;
 
+        // 🔥 FREQUENCY COUNTING INJECTION
+        let allValsWithDupes = [...pVals, ...sVals, ...subVals];
+        if (includeSSL && sslVals.length > 0) {
+            allValsWithDupes.push(...sslVals);
+        }
+        let rawEvensCount = allValsWithDupes.filter(n => n % 2 === 0).length;
+        let rawOddsCount  = allValsWithDupes.filter(n => n % 2 !== 0).length;
+
         let pStrong = pVals.filter(n => strongNums.includes(n));
         let sSubWeak = [...sVals, ...subVals].filter(n => !strongNums.includes(n));
         let pPattern = patterns.find(pat => pStrong.filter(n => pat.group.includes(n)).length >= 2);
@@ -5846,12 +5863,21 @@ function computeTable10Row(p, excludeSublordForGraphs = false) {
             if (pStrongOdds === pStrong.length && sSubWeakOdds >= 2) isSameParityCombine = true;
         }
 
-        if (strongEvensCount > 0 && strongEvensCount === evens.length && weakOddsCount === odds.length && strongOddsCount === 0 && !patternOverride) {
+        // 🔥 MODIFIED: $ dominance fails if the raw volume of the opponent parity is strictly greater
+        if (strongEvensCount > 0 && strongEvensCount === evens.length && weakOddsCount === odds.length && strongOddsCount === 0 && !patternOverride && rawEvensCount >= rawOddsCount) {
             finalArrBase = allEvens;
         }
-        else if (strongOddsCount > 0 && strongOddsCount === odds.length && weakEvensCount === evens.length && strongEvensCount === 0 && !patternOverride) {
+        else if (strongOddsCount > 0 && strongOddsCount === odds.length && weakEvensCount === evens.length && strongEvensCount === 0 && !patternOverride && rawOddsCount >= rawEvensCount) {
             finalArrBase = allOdds;
         }
+        // 🔥 MOVED UP: Frequency Dominance now executes FIRST to crush 4-number patterns (like 1,5,7,11)
+        else if (rawEvensCount > rawOddsCount) {
+            finalArrBase = allEvens;
+        }
+        else if (rawOddsCount > rawEvensCount) {
+            finalArrBase = allOdds;
+        }
+        // Old rules now serve safely as TIE-BREAKERS if the raw frequency counts are exactly equal
         else if (pPattern && sSubWeak.length > 0 && !sSubWeak.some(n => pPattern.group.includes(n)) && !isSameParityCombine && !massiveParityDominance) {
             finalArrBase = pPattern.matches.filter(n => pStrong.includes(n));
         }
@@ -6932,8 +6958,6 @@ function mergeLionSheep(sheepVals, lionVals) {
 
 
 
-
-
 /* ---------- MAIN COMPUTE FOR TABLE 9 ---------- */
 function computeEffectiveLinksRow(p) {
 
@@ -6971,25 +6995,44 @@ function computeEffectiveLinksRow(p) {
         if (!sslUntenanted) { valsC1 = []; srcC = []; }
     }
 
-    // Apply Hard Exception Overrides First
+    // Apply Hard Exception Overrides First (🔥 FIXED: 1 VS 1 ONLY)
     if (typeof HB_EXCEPTION_RULE !== 'undefined' && HB_EXCEPTION_RULE) {
         const badMap = {
             1: [8, 12], 2: [9, 1], 3: [10, 2], 4: [11, 3],
             5: [12, 4], 6: [1, 5], 7: [2, 6], 8: [3, 7],
             9: [4, 8], 10: [5, 9], 11: [6, 10], 12: [7, 11]
         };
+
         const applyException = (arr1, arr2) => {
-            let pool = [...arr1, ...arr2];
-            let newArr1 = arr1.filter(v => !badMap[v]?.some(bad => pool.includes(bad)));
-            let newArr2 = arr2.filter(v => !badMap[v]?.some(bad => pool.includes(bad)));
-            return { a1: newArr1, a2: newArr2 };
+            // 🔥 ONLY trigger if it's a 1 vs 1 single number fight
+            if (arr1.length === 1 && arr2.length === 1) {
+                let pool = [...arr1, ...arr2];
+                let newArr1 = arr1.filter(v => !badMap[v]?.some(bad => pool.includes(bad)));
+                let newArr2 = arr2.filter(v => !badMap[v]?.some(bad => pool.includes(bad)));
+                return { a1: newArr1, a2: newArr2 };
+            }
+            // Otherwise, leave the arrays completely untouched
+            return { a1: arr1, a2: arr2 };
         };
-        let resA = applyException(valsA1, valsA2); valsA1 = resA.a1; valsA2 = resA.a2;
-        let resB = applyException(valsB1, valsB2); valsB1 = resB.a1; valsB2 = resB.a2;
-        let resC = applyException(valsC1, valsC2); valsC1 = resC.a1; valsC2 = resC.a2;
+
+        let resA = applyException(valsA1, valsA2);
+        valsA1 = resA.a1;
+        valsA2 = resA.a2;
+
+        let resB = applyException(valsB1, valsB2);
+        valsB1 = resB.a1;
+        valsB2 = resB.a2;
+
+        let resC = applyException(valsC1, valsC2);
+        valsC1 = resC.a1;
+        valsC2 = resC.a2;
     }
 
-    /* =========================================
+    
+	
+	
+	
+	/* =========================================
        🔥 THE REFINED DOMINANCE ENGINE 🔥
        ========================================= */
     function resolveLionSheep(lionVals, sheepVals, isLionStrong) {
@@ -7001,34 +7044,32 @@ function computeEffectiveLinksRow(p) {
         let combined = uniqueSorted([...L, ...S]);
 
         const isAllEven = arr => arr.length > 0 && arr.every(n => n % 2 === 0);
-        const isAllOdd  = arr => arr.length > 0 && arr.every(n => n % 2 !== 0);
+        const isAllOdd = arr => arr.length > 0 && arr.every(n => n % 2 !== 0);
 
-        // RULE 1: DUSTHANA ATTRACTION HARD RULE (6,8,12)
-        // Only triggers to protect 6,8,12 from being spoiled by 5 and 11.
+        // RULE 1: SAME PARITY MERGING (Both Even or Both Odd)
+        if ((isAllEven(L) && isAllEven(S)) || (isAllOdd(L) && isAllOdd(S))) {
+            return combined;
+        }
+
+        // RULE 2: PARITY QUANTITY DOMINANCE + STRENGTH ($)
+        // Strong Lion completely eats the opposite parity Sheep
+        if (isLionStrong) {
+            if ((isAllEven(L) && isAllOdd(S)) || (isAllOdd(L) && isAllEven(S))) {
+                if (L.length >= S.length || L.length >= 3) {
+                    return L; // Correctly returns [2, 6, 8, 12] here!
+                }
+            }
+        }
+
+        // RULE 3: DUSTHANA ATTRACTION HARD RULE (6,8,12)
+        // Only applies if the Sheep survived the parity check above
         if (combined.includes(6) && combined.includes(8) && combined.includes(12)) {
             if ((L.includes(5) || S.includes(5)) && (L.includes(11) || S.includes(11))) {
                 return [6, 8, 12];
             }
         }
 
-        // RULE 2: SAME PARITY MERGING (Both Even or Both Odd)
-        // e.g. 4,6,10,12 + 8 => 4,6,8,10,12
-        if ((isAllEven(L) && isAllEven(S)) || (isAllOdd(L) && isAllOdd(S))) {
-            return combined;
-        }
-
-        // RULE 3: PARITY QUANTITY DOMINANCE + STRENGTH ($)
-        // e.g. 3,7,9$ vs 6,12 => 3,7,9
-        if (isLionStrong) {
-            if ((isAllEven(L) && isAllOdd(S)) || (isAllOdd(L) && isAllEven(S))) {
-                if (L.length >= S.length || L.length >= 3) {
-                    return L; 
-                }
-            }
-        }
-
         // RULE 4: EQUAL PARITY PATTERN FORMATION (2 vs 2)
-        // e.g. 3,9$ + 6,12 => 3,6,9,12
         if (L.length === 2 && S.length === 2) {
             if ((isAllEven(L) && isAllOdd(S)) || (isAllOdd(L) && isAllEven(S))) {
                 const patterns = [[1, 4, 7, 10], [2, 5, 8, 11], [3, 6, 9, 12]];
@@ -7053,11 +7094,20 @@ function computeEffectiveLinksRow(p) {
                     let aIsLion = L.includes(numA);
                     let bIsLion = L.includes(numB);
 
+                    // 🔥 BUG FIX: Parity Dominance First (Minority Parity cannot kill Majority Parity)
+                    let oddsCount = combined.filter(n => n % 2 !== 0).length;
+                    let evensCount = combined.filter(n => n % 2 === 0).length;
+                    let isAKillerMinority = (numA % 2 !== 0 && oddsCount < evensCount) || (numA % 2 === 0 && evensCount < oddsCount);
+                    
+                    if (isAKillerMinority) {
+                        continue; // Killer's parity is outnumbered, blocked from eliminating!
+                    }
+
                     if (isLionStrong) {
                         if (aIsLion && !bIsLion) {
                             toRemove.add(numB); // Strong Lion kills Sheep
                         } else if (!aIsLion && bIsLion) {
-                            toRemove.add(numA); // Sheep tries to kill Strong Lion -> Fails! Sheep dies instead.
+                            toRemove.add(numA); // Sheep tries to kill Strong Lion -> Fails!
                         }
                     } else {
                         toRemove.add(numB); // Standard elimination
@@ -7090,6 +7140,9 @@ function computeEffectiveLinksRow(p) {
 
         return pOut.length >= eOut.length ? pOut : eOut;
     }
+	
+	
+	
 
     // Apply the Refined Engine
     let partA = resolveLionSheep(valsA1, valsA2, planetUntenanted);
@@ -7102,7 +7155,6 @@ function computeEffectiveLinksRow(p) {
     if (valsC2.length) srcC.push(starOfSSL);
 
     let formatResult = (res) => {
-        // Formats mixed/nested Arrays natively, otherwise standard Join
         if (Array.isArray(res) && res.length > 0 && Array.isArray(res[0])) {
             return res.map(cluster => cluster.join(",")).join(" + ");
         }
@@ -7119,7 +7171,6 @@ function computeEffectiveLinksRow(p) {
         C: splitBySourceLevel(srcC, outC)
     };
 }
-
 
 
 
@@ -11621,13 +11672,17 @@ document.getElementById("toolEndDate").addEventListener("change", calcToolDateDi
 
 
 
+
+
+
+
+
+
+
+
+
+
 <script>
-
-
-
-
-
-
 
 
 
@@ -13636,16 +13691,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 
-
-
-
-
-
-
-
-
-
-
 function buildTable55() {
     let container = document.getElementById("table55-container");
     if (!container || typeof planets === 'undefined' || !cuspsData) return;
@@ -13890,7 +13935,6 @@ function buildTable50() {
 
     let sortSel = document.getElementById("t50SortSelect");
     
-    // 1. If options are empty, build them and instantly default to Moon's Starlord
     if(sortSel && sortSel.options.length === 0) {
         planets.forEach(p => sortSel.add(new Option(T50_FULL_NAMES[p] || p, p)));
         if(typeof getPlanetKPLords === "function") {
@@ -13901,16 +13945,13 @@ function buildTable50() {
         }
     }
 
-    // 2. 🔥 BULLETPROOF INTERCEPTOR 🔥
-    // If another dropdown (like Pivot) accidentally forces this to an invalid value (like "Lagna"),
-    // this intercepts the error and snaps it right back to Moon's Starlord.
     if(sortSel && (!sortSel.value || !planets.includes(sortSel.value))) {
         if(typeof getPlanetKPLords === "function") {
             let kpMoon = getPlanetKPLords("Chandra");
             if(kpMoon && kpMoon.star && kpMoon.star !== "--") {
                 sortSel.value = kpMoon.star;
             } else {
-                sortSel.value = "Sy"; // absolute fallback
+                sortSel.value = "Sy"; 
             }
         }
     }
@@ -13947,6 +13988,7 @@ function buildTable50() {
         let starOfSub = kp.sub ? (getPlanetKPLords(kp.sub)?.star || "") : "";
         let starOfSSL = kp.ssl ? (getPlanetKPLords(kp.ssl)?.star || "") : "";
 
+        // Check Tenanted ($) status: false means it has a $ (Untenanted), true means NO $
         let pTenanted = checkTenantedStatus(p);
         let subTenanted = checkTenantedStatus(kp.sub);
         let sslTenanted = checkTenantedStatus(kp.ssl);
@@ -13972,11 +14014,7 @@ function buildTable50() {
         header.innerText = pMainHeader;
         box.appendChild(header);
 
-        
-		
-		
-		
-		function addRow(label, planetCode, color, showNumbers, collapseRowGlobally) {
+        function addRow(label, planetCode, color, showNumbers, collapseRowGlobally) {
             let row = document.createElement("div");
             row.className = "t50-inner-row"; 
             row.style.boxSizing = "border-box"; 
@@ -13996,10 +14034,8 @@ function buildTable50() {
                 let fullName = T50_FULL_NAMES[planetCode] || planetCode;
                 let isCodeTenanted = checkTenantedStatus(planetCode);
                 
-                // Name and $ symbol ALWAYS display
                 pCodeDisplay = !isCodeTenanted ? `${fullName} $` : fullName; 
                 
-                // Numbers ONLY display if the rule allows it
                 if (showNumbers) {
                     val = getT50FormatString(planetCode);
                 }
@@ -14030,39 +14066,60 @@ function buildTable50() {
             return row;
         }
 
-        // ZONE 1 (Planet & Starlord)
-        // If Untenanted is ON: show planet numbers ONLY if it has the $ symbol (!pTenanted).
-        let showPlanetNumbers = !isUntenantedActive || !pTenanted;
+        // --- NEW EXACT UNTENANTED LOGIC ---
+        // If untenanted is checked AND the main row agent HAS a $ (!Tenanted), hide its subordinate's starlord numbers.
         
+        let showPlanetNumbers = true; // Planet ALWAYS shows numbers
+        let showStarlordNumbers = isUntenantedActive ? pTenanted : true; // Hides if Planet has $
+        
+        let collapseExtra = !showExtraStars;
+
+        let showSubNumbers = true; // Sub-lord ALWAYS shows numbers
+        let showStarOfSubNumbers = isUntenantedActive ? subTenanted : true; // Hides if Sub-lord has $
+        
+        let showSslNumbers = true; // Sub-sub ALWAYS shows numbers
+        let showStarOfSslNumbers = isUntenantedActive ? sslTenanted : true; // Hides if Sub-sub has $
+
         box.appendChild(addRow("Planet", p, "#38bdf8", showPlanetNumbers, false));
-        box.appendChild(addRow("Starlord", kp.star, "#f472b6", true, false));
+        box.appendChild(addRow("Starlord", kp.star, "#f472b6", showStarlordNumbers, false));
 
         box.appendChild(createDivider());
-
-        // ZONE 2 (Sub-lord & Star of Sub)
-        // If Untenanted is ON: show sub-lord numbers ONLY if it has the $ symbol (!subTenanted).
-        let collapseExtra = !showExtraStars;
-        let showSubNumbers = !isUntenantedActive || !subTenanted;
 
         box.appendChild(addRow("Sub-lord", kp.sub, "#fbbf24", showSubNumbers, false));
-        box.appendChild(addRow("Star of Sub", starOfSub, "#a855f7", true, collapseExtra));
+        box.appendChild(addRow("Star of Sub", starOfSub, "#a855f7", showStarOfSubNumbers, collapseExtra));
 
         box.appendChild(createDivider());
 
-        // ZONE 3 (Sub-sub & Star of Sub-sub)
-        // If Untenanted is ON: show sub-sub numbers ONLY if it has the $ symbol (!sslTenanted).
-        let showSslNumbers = !isUntenantedActive || !sslTenanted;
-
         box.appendChild(addRow("Sub-sub", kp.ssl, "#22c55e", showSslNumbers, false));
-        box.appendChild(addRow("Star of<br>Sub-Sub", starOfSSL, "#ef4444", true, collapseExtra));
+        box.appendChild(addRow("Star of<br>Sub-Sub", starOfSSL, "#ef4444", showStarOfSslNumbers, collapseExtra));
 
         container.appendChild(box);
     });
 
     setTimeout(() => {
-        t50SyncRowHeights();
+        if(typeof t50SyncRowHeights === 'function') t50SyncRowHeights();
     }, 50);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -14140,6 +14197,525 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="table53-wrapper" style="margin-top: 50px; border-top: 2px dashed #a86b17; padding-top: 25px;">
+    <h2 class="collapsible-heading collapsed" onclick="if(window.getSelection().toString()) return; toggleCollapsible('table53-body', this)" style="user-select: auto; font-size: 24px; font-weight: bold;">
+        Table 53 : Nadi Significator Dasha Bukthi Antara Mixer
+    </h2>
+    
+    <div id="table53-body" class="collapsible-body" style="display: none; margin-top: 20px;">
+        
+        <div style="margin-top: 20px; margin-bottom:25px; background:#1f1410; padding:15px; border:1px solid #a86b17; border-radius:8px; display:flex; justify-content:center; align-items:center; gap:25px; flex-wrap:wrap;">
+            
+            <label style="color:var(--grid-line, #facc15); font-weight:bold; font-size:16px; display:flex; align-items:center; gap:8px;">
+                PIVOT:
+                <select id="t53PivotMirror" onchange="
+                    const mainPivot = document.getElementById('pivotSelect');
+                    if(mainPivot) {
+                        mainPivot.value = this.value;
+                        mainPivot.dispatchEvent(new Event('change'));
+                    }
+                    buildTable53();
+                " style="background:#000; color:#fff; border:1px solid #a86b17; padding:6px 10px; font-size:16px; font-weight:bold; cursor:pointer;">
+                </select>
+            </label>
+
+            <label style="cursor:pointer; display:inline-flex; align-items:center; gap:8px; color:#ff8800; font-weight:bold; font-size:16px;">
+                <input type="checkbox" id="t53CenterAlign" class="t50-dark-cb" onchange="buildTable53()">
+                Center Align
+            </label>
+
+            <label style="cursor:pointer; display:inline-flex; align-items:center; gap:8px; color:#c084fc; font-weight:bold; font-size:16px;">
+                <input type="checkbox" id="t53Untenanted" class="t50-dark-cb" onchange="buildTable53()">
+                Untenanted
+            </label>
+
+            <label style="color:#a855f7; cursor:pointer; font-size:16px; display:inline-flex; align-items:center; gap:8px; font-weight:bold;">
+                <input type="checkbox" id="t53_show_extra_stars" class="t50-dark-cb" onchange="buildTable53()" checked> 
+                Show Star of Sublord & Star of Sub-sub
+            </label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; margin-bottom: 20px;">
+            <div style="background: #0c0505; border: 1px solid #3a1a12; border-radius: 8px; padding: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);">
+                <h3 style="color:#ff9f1c; text-align:center; margin-top: 0; margin-bottom:15px; border-bottom:2px solid #a86b17; padding-bottom:10px; font-size: 20px; letter-spacing: 1px;">DASHA</h3>
+                <div id="t53DashaBtns" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;"></div>
+            </div>
+            
+            <div style="background: #0c0505; border: 1px solid #3a1a12; border-radius: 8px; padding: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);">
+                <h3 style="color:#ff9f1c; text-align:center; margin-top: 0; margin-bottom:15px; border-bottom:2px solid #a86b17; padding-bottom:10px; font-size: 20px; letter-spacing: 1px;">BUKTHI</h3>
+                <div id="t53BukthiBtns" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;"></div>
+            </div>
+            
+            <div style="background: #0c0505; border: 1px solid #3a1a12; border-radius: 8px; padding: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);">
+                <h3 style="color:#ff9f1c; text-align:center; margin-top: 0; margin-bottom:15px; border-bottom:2px solid #a86b17; padding-bottom:10px; font-size: 20px; letter-spacing: 1px;">ANTARA</h3>
+                <div id="t53AntaraBtns" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;"></div>
+            </div>
+        </div>
+
+        <div id="t53MasterBoxGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; align-items: stretch;">
+            <!-- 27 Boxes injected here -->
+        </div>
+
+    </div>
+</div>
+
+<script>
+// =========================================================
+// TABLE 53: LOGIC & RENDERING ENGINE (Strict Row Alignment)
+// =========================================================
+let t53State = {
+    dasha: null,
+    bukthi: null,
+    antara: null
+};
+
+function getT53CurrentRunningDB() {
+    if(typeof vimDOB !== "function" || typeof vimMoonAbs !== "function") return { dasha: null, bukthi: null };
+    let d = vimDOB();
+    let abs = vimMoonAbs();
+    if(!d || abs == null) return { dasha: null, bukthi: null };
+    
+    let startObj = vimStart(abs, d);
+    let curDate = new Date(startObj.start).getTime();
+    let rotated = vimRotate(startObj.lord);
+    let now = Date.now();
+    
+    let currentDasha = null;
+    let dashaStart = null;
+    
+    // 1. Find Current Dasha
+    for(let i=0; i<rotated.length; i++) {
+        let p = rotated[i];
+        let end = curDate + VIM_YEARS[p] * MS_YEAR;
+        if(now >= curDate && now < end) {
+            currentDasha = p;
+            dashaStart = curDate;
+            break;
+        }
+        curDate = end;
+    }
+    
+    if (!currentDasha) return { dasha: startObj.lord, bukthi: startObj.lord };
+    
+    // 2. Find Current Bukthi inside that Dasha
+    let bRotated = vimRotate(currentDasha);
+    let bCurDate = dashaStart;
+    let currentBukthi = null;
+    
+    for(let i=0; i<bRotated.length; i++) {
+        let pB = bRotated[i];
+        let bSpan = (VIM_YEARS[currentDasha] * VIM_YEARS[pB] / 120) * MS_YEAR;
+        let bEnd = bCurDate + bSpan;
+        if(now >= bCurDate && now < bEnd) {
+            currentBukthi = pB;
+            break;
+        }
+        bCurDate = bEnd;
+    }
+    
+    return { dasha: currentDasha, bukthi: currentBukthi || currentDasha };
+}
+
+function checkT53TenantedStatus(pl) {
+    if (!pl || pl === "--") return false;
+    if (typeof TENANTED_CACHE !== 'undefined' && TENANTED_CACHE) {
+        return TENANTED_CACHE.has(pl);
+    }
+    return true; 
+}
+
+function createT53Divider(isHidden) {
+    let div = document.createElement("div");
+    div.style.height = "2px";
+    div.style.background = isHidden ? "linear-gradient(90deg, transparent 0%, rgba(168,107,23,0.2) 50%, transparent 100%)" : "linear-gradient(90deg, transparent 0%, #ff9f1c 50%, transparent 100%)";
+    div.style.margin = "6px 0";
+    div.style.opacity = "0.75";
+    return div;
+}
+
+function createMiniNavBtn(planetCode, isSelected, onClick) {
+    let btn = document.createElement("button");
+    let bg = isSelected ? "linear-gradient(135deg, #b11226, #7f1d1d)" : "linear-gradient(145deg, #1f1410, #0c0505)";
+    let border = isSelected ? "1px solid #facc15" : "1px solid #a86b17";
+    let color = isSelected ? "#ffffff" : "#facc15";
+    let shadow = isSelected ? "0 0 10px rgba(250,204,21,0.6)" : "none";
+
+    btn.style.cssText = `
+        background: ${bg};
+        border: ${border};
+        color: ${color};
+        box-shadow: ${shadow};
+        padding: 8px 4px;
+        border-radius: 4px;
+        font-weight: 900;
+        font-size: 13px;
+        cursor: ${planetCode ? "pointer" : "default"};
+        text-align: center;
+        transition: all 0.15s ease-in-out;
+        letter-spacing: 0.5px;
+    `;
+    
+    if (planetCode) {
+        btn.innerText = (typeof T50_FULL_NAMES !== "undefined" && T50_FULL_NAMES[planetCode]) ? T50_FULL_NAMES[planetCode] : planetCode; 
+        btn.onclick = onClick;
+        btn.onmouseenter = function() { if(!isSelected) this.style.borderColor = "#facc15"; };
+        btn.onmouseleave = function() { if(!isSelected) this.style.borderColor = "#a86b17"; };
+    } else {
+        btn.innerText = "--";
+        btn.style.opacity = "0.2";
+    }
+    return btn;
+}
+
+// =========================================================
+// INVISIBLE DUMMY TEXT ENGINE FOR EMPTY BOXES
+// =========================================================
+function createT53Box(planet, onClick, centerAlign, isUntenantedActive, showExtraStars, dummyRefPlanet) {
+    let box = document.createElement("div");
+    
+    box.style.border = "1px solid #a86b17";
+    box.style.background = "linear-gradient(180deg, #1f1410, #0c0505)";
+    box.style.padding = "15px";
+    box.style.borderRadius = "8px";
+    box.style.boxShadow = "0 0 10px rgba(255,159,28,0.15)";
+    box.style.display = "flex";
+    box.style.flexDirection = "column";
+    box.style.transition = "all 0.2s ease-in-out";
+    box.style.height = "100%"; 
+    box.style.boxSizing = "border-box";
+    
+    // Determine if this box should be physically rendered but visibly hidden
+    let isHiddenBox = !planet;
+    let renderPlanet = planet || dummyRefPlanet || "Surya"; 
+    let visStyle = isHiddenBox ? "visibility: hidden;" : "";
+    
+    if (isHiddenBox) {
+        box.style.borderColor = "rgba(168, 107, 23, 0.3)";
+        box.style.pointerEvents = "none";
+    } else {
+        if(onClick) {
+            box.style.cursor = "pointer";
+            box.onmouseenter = function() { 
+                this.style.borderColor = "#facc15"; 
+                this.style.transform = "translateY(-2px)";
+            };
+            box.onmouseleave = function() { 
+                this.style.borderColor = "#a86b17"; 
+                this.style.transform = "translateY(0)";
+            };
+            box.onclick = onClick;
+        }
+    }
+    
+    let kp = getPlanetKPLords(renderPlanet);
+    if (!kp) return box;
+    
+    let starOfSub = kp.sub ? (getPlanetKPLords(kp.sub)?.star || "") : "";
+    let starOfSSL = kp.ssl ? (getPlanetKPLords(kp.ssl)?.star || "") : "";
+
+    let pTenanted = checkT53TenantedStatus(renderPlanet);
+    let subTenanted = checkT53TenantedStatus(kp.sub);
+    let sslTenanted = checkT53TenantedStatus(kp.ssl);
+
+    let pMainHeader = (typeof T50_FULL_NAMES !== "undefined" && T50_FULL_NAMES[renderPlanet]) ? T50_FULL_NAMES[renderPlanet] : renderPlanet;
+    if (!pTenanted) pMainHeader += " $";
+
+    let header = document.createElement("h3");
+    header.style.color = "#facc15";
+    header.style.textAlign = "center";
+    header.style.margin = "0 0 10px 0";
+    header.style.borderBottom = isHiddenBox ? "2px solid rgba(168, 107, 23, 0.3)" : "2px solid #a86b17";
+    header.style.display = "flex";
+    header.style.alignItems = "center";
+    header.style.justifyContent = "center";
+    header.innerHTML = `<span style="${visStyle}">${pMainHeader}</span>`;
+    box.appendChild(header);
+
+    function addRow(label, planetCode, color, showNumbers, collapseRowGlobally) {
+        let row = document.createElement("div");
+        row.className = "t50-inner-row"; 
+        row.style.boxSizing = "border-box"; 
+        
+        if (collapseRowGlobally) {
+            row.style.display = "none";
+            return row; 
+        }
+
+        row.style.borderBottom = isHiddenBox ? "1px solid rgba(168, 107, 23, 0.05)" : "1px solid rgba(168, 107, 23, 0.15)"; 
+        row.style.marginBottom = "4px";
+        row.style.paddingBottom = "4px";
+
+        let pCodeDisplay = "";
+        let val = "";
+
+        if (planetCode && planetCode !== "--") {
+            let fullName = (typeof T50_FULL_NAMES !== "undefined" && T50_FULL_NAMES[planetCode]) ? T50_FULL_NAMES[planetCode] : planetCode;
+            let isCodeTenanted = checkT53TenantedStatus(planetCode);
+            pCodeDisplay = !isCodeTenanted ? `${fullName} $` : fullName; 
+            if (showNumbers && typeof getT50FormatString === "function") {
+                val = getT50FormatString(planetCode);
+            }
+        }
+
+        if (centerAlign) {
+            row.style.display = "flex";
+            row.style.flexDirection = "column";
+            row.style.justifyContent = "center";
+            row.style.alignItems = "center";
+            row.style.textAlign = "center";
+            row.innerHTML = `<div style="color:${color}; font-weight:bold; font-size:15px; margin-bottom:4px; line-height:1.2; ${visStyle}">${label}</div>
+                             <div style="font-weight:bold; font-size:15px; letter-spacing:0.5px; line-height:1.3; ${visStyle}">
+                                <span style="color:#f5e9c6; margin-right:8px;">${pCodeDisplay}</span>
+                                <span style="color:#ff9f1c;">${val}</span>
+                             </div>`;
+        } else {
+            row.style.display = "grid";
+            row.style.gridTemplateColumns = "95px 95px 1fr";
+            row.style.gap = "6px";
+            row.style.alignItems = "center"; 
+            row.innerHTML = `<span style="color:${color}; font-weight:bold; font-size:14px; line-height:1.2; ${visStyle}">${label}</span>
+                             <span style="color:#f5e9c6; font-weight:bold; font-size:15px; line-height:1.2; ${visStyle}">${pCodeDisplay}</span>
+                             <span style="font-weight:bold; font-size:14px; letter-spacing:0.5px; color:#ff9f1c; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; ${visStyle}">${val}</span>`;
+        }
+        return row;
+    }
+
+    let showPlanetNumbers = true;
+    let showStarlordNumbers = isUntenantedActive ? pTenanted : true; 
+    let showSubNumbers = true;
+    let showStarOfSubNumbers = isUntenantedActive ? subTenanted : true; 
+    let showSslNumbers = true;
+    let showStarOfSslNumbers = isUntenantedActive ? sslTenanted : true; 
+
+    box.appendChild(addRow("Planet", renderPlanet, "#38bdf8", showPlanetNumbers, false));
+    box.appendChild(addRow("Starlord", kp.star, "#f472b6", showStarlordNumbers, false));
+
+    box.appendChild(createT53Divider(isHiddenBox));
+
+    let collapseExtra = !showExtraStars;
+
+    box.appendChild(addRow("Sub-lord", kp.sub, "#fbbf24", showSubNumbers, false));
+    box.appendChild(addRow("Star of Sub", starOfSub, "#a855f7", showStarOfSubNumbers, collapseExtra));
+
+    box.appendChild(createT53Divider(isHiddenBox));
+
+    box.appendChild(addRow("Sub-sub", kp.ssl, "#22c55e", showSslNumbers, false));
+    box.appendChild(addRow("Star of<br>Sub-Sub", starOfSSL, "#ef4444", showStarOfSslNumbers, collapseExtra));
+
+    return box;
+}
+
+// ------------------------------------------------------------------
+// AUTO-SYNC HEIGHTS ALGORITHM FOR TABLE 53 (RESTORED & OPTIMIZED)
+// ------------------------------------------------------------------
+let t53SyncRunning = false;
+function t53SyncRowHeights() {
+    if (t53SyncRunning) return;
+    t53SyncRunning = true;
+    
+    let masterGrid = document.getElementById("t53MasterBoxGrid");
+    if (!masterGrid) {
+        t53SyncRunning = false;
+        return;
+    }
+
+    let boxes = Array.from(masterGrid.children);
+    if (boxes.length === 0) {
+        t53SyncRunning = false;
+        return;
+    }
+
+    // Process row by row (chunks of 3 boxes = 1 row)
+    for (let i = 0; i < boxes.length; i += 3) {
+        let rowBoxes = [boxes[i], boxes[i+1], boxes[i+2]].filter(b => b); 
+
+        // 1. Reset heights to Auto to measure natural height
+        rowBoxes.forEach(box => {
+            let h3 = box.querySelector('h3');
+            if (h3) h3.style.height = "auto";
+            let innerRows = box.querySelectorAll('.t50-inner-row');
+            innerRows.forEach(r => r.style.height = "auto");
+        });
+
+        // 2. Sync H3 headers (The planet name section)
+        let maxH3 = 0;
+        rowBoxes.forEach(box => {
+            let h3 = box.querySelector('h3');
+            if (h3) maxH3 = Math.max(maxH3, h3.offsetHeight);
+        });
+        if (maxH3 > 0) {
+            rowBoxes.forEach(box => {
+                let h3 = box.querySelector('h3');
+                if (h3) h3.style.height = maxH3 + "px";
+            });
+        }
+
+        // 3. Sync Inner Rows (Row 0 to Row 5)
+        for (let r = 0; r < 6; r++) {
+            let maxRowH = 0;
+            rowBoxes.forEach(box => {
+                let innerRows = box.querySelectorAll('.t50-inner-row');
+                if (innerRows[r] && innerRows[r].style.display !== "none") {
+                    maxRowH = Math.max(maxRowH, innerRows[r].offsetHeight);
+                }
+            });
+            if (maxRowH > 0) {
+                rowBoxes.forEach(box => {
+                    let innerRows = box.querySelectorAll('.t50-inner-row');
+                    if (innerRows[r] && innerRows[r].style.display !== "none") {
+                        innerRows[r].style.height = maxRowH + "px";
+                    }
+                });
+            }
+        }
+    }
+    t53SyncRunning = false;
+}
+
+// Ensure resizing keeps them aligned
+window.addEventListener('resize', () => {
+    if (document.getElementById('table53-body') && document.getElementById('table53-body').style.display !== "none") {
+        t53SyncRowHeights();
+    }
+});
+
+
+function buildTable53() {
+    let T3 = window.__T3_CACHE__;
+    if (!T3) return;
+
+    let mainPivot = document.getElementById("pivotSelect");
+    let t53Pivot = document.getElementById("t53PivotMirror");
+    if (t53Pivot && mainPivot && t53Pivot.options.length === 0) {
+        t53Pivot.innerHTML = mainPivot.innerHTML;
+        t53Pivot.value = mainPivot.value;
+    }
+
+    let centerAlign = document.getElementById("t53CenterAlign")?.checked;
+    let isUntenantedActive = document.getElementById("t53Untenanted")?.checked;
+    let showExtraStars = document.getElementById("t53_show_extra_stars")?.checked;
+
+    let moonKp = getPlanetKPLords("Chandra");
+    if (!moonKp || !moonKp.star) return;
+    
+    // 🔥 NEW: Resolves both Dasha and Bukthi on first load
+    if (!t53State.dasha) {
+        let runningDB = getT53CurrentRunningDB();
+        t53State.dasha = runningDB.dasha ? runningDB.dasha : moonKp.star;
+        t53State.bukthi = runningDB.bukthi ? runningDB.bukthi : moonKp.star;
+    }
+
+    let dashaSeq = vimRotate(moonKp.star);
+    let bukthiSeq = vimRotate(t53State.dasha);
+    let antaraSeq = t53State.bukthi ? vimRotate(t53State.bukthi) : null;
+
+    let dBtns = document.getElementById("t53DashaBtns");
+    let bBtns = document.getElementById("t53BukthiBtns");
+    let aBtns = document.getElementById("t53AntaraBtns");
+    let masterGrid = document.getElementById("t53MasterBoxGrid");
+
+    if (!dBtns || !bBtns || !aBtns || !masterGrid) return;
+
+    dBtns.innerHTML = "";
+    bBtns.innerHTML = "";
+    aBtns.innerHTML = "";
+    masterGrid.innerHTML = "";
+    
+    let dashaPlanets = [];
+    let bukthiPlanets = [];
+
+    // 1. Top Button Navigators
+    for (let i = 0; i < 9; i++) {
+        let pD = dashaSeq[i];
+        dBtns.appendChild(createMiniNavBtn(pD, (pD === t53State.dasha), () => {
+            t53State.dasha = pD; t53State.bukthi = null; t53State.antara = null; buildTable53();
+        }));
+        dashaPlanets.push(t53State.dasha); 
+
+        let pB = bukthiSeq[i];
+        bBtns.appendChild(createMiniNavBtn(pB, (pB === t53State.bukthi), () => {
+            if(t53State.bukthi === pB) t53State.bukthi = null; else t53State.bukthi = pB;
+            t53State.antara = null;
+            buildTable53();
+        }));
+        bukthiPlanets.push(t53State.bukthi ? t53State.bukthi : pB);
+
+        if (antaraSeq) {
+            let pA = antaraSeq[i];
+            aBtns.appendChild(createMiniNavBtn(pA, (pA === t53State.antara), () => {
+                if(t53State.antara === pA) t53State.antara = null; else t53State.antara = pA; buildTable53();
+            }));
+        } else {
+            aBtns.appendChild(createMiniNavBtn(null, false, null));
+        }
+    }
+
+    // 2. Master Grid Boxes (Generating all 27 boxes inside one unified grid)
+    for (let i = 0; i < 9; i++) {
+        
+        // DASHA BOX (Column 1)
+        masterGrid.appendChild(createT53Box(dashaPlanets[i], null, centerAlign, isUntenantedActive, showExtraStars, dashaPlanets[i]));
+        
+        // BUKTHI BOX (Column 2)
+        let bPlanet = bukthiPlanets[i];
+        masterGrid.appendChild(createT53Box(bPlanet, () => {
+            if(t53State.bukthi === bPlanet) t53State.bukthi = null; else t53State.bukthi = bPlanet;
+            t53State.antara = null;
+            buildTable53();
+        }, centerAlign, isUntenantedActive, showExtraStars, dashaPlanets[i]));
+
+        // ANTARA BOX (Column 3)
+        if (t53State.bukthi) {
+            let aPlanet = t53State.antara ? t53State.antara : antaraSeq[i];
+            masterGrid.appendChild(createT53Box(aPlanet, () => {
+                if(t53State.antara === aPlanet) t53State.antara = null; else t53State.antara = aPlanet; 
+                buildTable53();
+            }, centerAlign, isUntenantedActive, showExtraStars, bukthiPlanets[i]));
+        } else {
+            // Unselected Bukthi -> Antara uses Dummy Text to maintain alignment
+            masterGrid.appendChild(createT53Box(null, null, centerAlign, isUntenantedActive, showExtraStars, bukthiPlanets[i]));
+        }
+    }
+    
+    // 🔥 TRIPLE-FIRE HEIGHT ALIGNMENT (Guarantees layout completes perfectly after DOM paint)
+    requestAnimationFrame(() => {
+        setTimeout(t53SyncRowHeights, 50);
+        setTimeout(t53SyncRowHeights, 200);
+        setTimeout(t53SyncRowHeights, 600);
+    });
+}
+
+// ==========================================
+// AUTO-CHAIN INJECTION HOOK
+// ==========================================
+(function(){
+    // Attach safely after Table 45 (which comes after Table 40 bar charts)
+    if (typeof buildTable45 === "function") {
+        const _origT45 = buildTable45;
+        buildTable45 = function() {
+            _origT45();
+            if (typeof buildTable53 === "function") buildTable53();
+        };
+    }
+})();
+</script>
 
 
 

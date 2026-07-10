@@ -7117,11 +7117,11 @@ function computeEffectiveLinksRow(p) {
         }
 
         let survived = finalSet.filter(n => !toRemove.has(n));
-        if (survived.length > 0 && survived.length < combined.length) {
-            return survived;
-        }
+		if (survived.length > 0 && survived.length < combined.length) {
+			combined = survived; // ✅ Let the surviving numbers continue down to Rule 6
+		}
 
-        // RULE 6: FALLBACK TO STANDARD PATTERN DOMINANCE
+		// RULE 6: FALLBACK TO STANDARD PATTERN DOMINANCE
         if (typeof HB_MIXED !== 'undefined' && HB_MIXED) {
             let mixedRes = mixedStructural(combined);
             if (mixedRes.length > 1) return mixedRes;

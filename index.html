@@ -683,16 +683,79 @@ input[type="time"] {
             </div>
         </div>
         
-        <div class="form-group">
-            <span>&#x1F4CD; Standard Places</span>
-            <select id="locationPreset" onchange="applyPresetLocation()" style="width: 180px;">
-                <option value="manual">Manual GPS (Default)</option>
-                <option value="13.3190737,77.1326306">Tumakuru</option>
-                <option value="12.918880,77.634986">Bengaluru</option>
-                <option value="13.315527,76.942059">Gubbi</option>
-                <option value="12.304776,76.655108">Mysore</option>
-            </select>
+        <div style="display: flex; gap: 30px; align-items: flex-end;">
+            <div class="form-group">
+                <span>&#x1F4CD; Standard Places</span>
+                <select id="locationPreset" onchange="applyPresetLocation()" style="width: 180px;">
+                    <option value="manual">Manual GPS (Default)</option>
+                    <option value="13.3190737,77.1326306">Tumakuru</option>
+                    <option value="12.918880,77.634986">Bengaluru</option>
+                    <option value="13.315527,76.942059">Gubbi</option>
+                    <option value="12.304776,76.655108">Mysore</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="padding-bottom: 1px;">
+                <div id="ageOutlineBox" style="border: 1px solid var(--grid-line); padding: 5px 15px; border-radius: 4px; background: #0c0505; color: #facc15; font-size: 14px; font-weight: 800; white-space: nowrap; height: 28px; display: flex; align-items: center; letter-spacing: 0.5px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
+                    Age : &nbsp;-- years&nbsp; : -- months : -- days
+                </div>
+            </div>
         </div>
+
+        <script>
+            function calculateAgeLive() {
+                const dInput = document.getElementById("onDay");
+                const mInput = document.getElementById("onMonth");
+                const yInput = document.getElementById("onYear");
+                const display = document.getElementById("ageOutlineBox");
+                
+                if (!dInput || !mInput || !yInput || !display) return;
+
+                const d = parseInt(dInput.value);
+                const m = parseInt(mInput.value);
+                const y = parseInt(yInput.value);
+                
+                if (!d || !m || !y || y < 1000) {
+                    display.innerHTML = "Age : &nbsp;-- years&nbsp; : -- months : -- days";
+                    return;
+                }
+
+                const dob = new Date(y, m - 1, d);
+                const today = new Date(); 
+                
+                if (dob > today) {
+                    display.innerHTML = "Age : &nbsp;Future Date";
+                    return;
+                }
+
+                let years = today.getFullYear() - dob.getFullYear();
+                let months = today.getMonth() - dob.getMonth();
+                let days = today.getDate() - dob.getDate();
+
+                if (days < 0) {
+                    months--;
+                    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                    days += prevMonth.getDate();
+                }
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+                
+                display.innerHTML = `Age : &nbsp;${years} years&nbsp; : ${months} months : ${days} days`;
+            }
+
+            // A bulletproof interval ensures calculations update even when JS manually changes the values via Arrow Spinner or JSON profile loads
+            document.addEventListener("DOMContentLoaded", () => {
+                const box = document.getElementById("onlineFetchBox");
+                if (box) {
+                    box.addEventListener("input", calculateAgeLive);
+                    box.addEventListener("keyup", calculateAgeLive);
+                    box.addEventListener("change", calculateAgeLive);
+                }
+                setInterval(calculateAgeLive, 400); // 400ms polling catches all edge cases
+            });
+        </script>
 
         <div class="form-group" style="flex: 2;">
             <span>&#x1F4CD; Coordinates: Latitude | Longitude | Lat (DMS) | Lon (DMS)</span>
@@ -1232,10 +1295,34 @@ input[type="time"] {
         }
     }
 
+
+
+
+
+
+
     function saveCloudProfile() {
         const name = document.getElementById("onName").value.trim();
         if (name.length < 4) {
             return;
+        }
+
+        // 🔥 OFFLINE GATE: Ensure global chart data exists before saving
+        let activeChartData = null;
+        if (typeof raw !== "undefined" && raw) {
+            activeChartData = raw;
+        } else if (typeof window.__LAST_SWISS_KP__ !== "undefined" && window.__LAST_SWISS_KP__) {
+            activeChartData = window.__LAST_SWISS_KP__;
+        }
+
+        if (!activeChartData) {
+            alert("Please fetch or load the chart data first before saving.");
+            return;
+        }
+
+        // 🧹 CLEANUP: Strip 'Sayana' from the raw data to keep file size lean
+        if (activeChartData.ayanamshas && activeChartData.ayanamshas["Sayana"]) {
+            delete activeChartData.ayanamshas["Sayana"];
         }
 
         const profileData = {
@@ -1254,7 +1341,9 @@ input[type="time"] {
             coords: {
                 lat: document.getElementById("onlineLat").value,
                 lon: document.getElementById("onlineLon").value
-            }
+            },
+            // 🔥 Embeds full calculated data for 100% offline usage
+            chartData: activeChartData
         };
         
         const dataStr = JSON.stringify(profileData, null, 2);
@@ -1271,6 +1360,15 @@ input[type="time"] {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
     function loadCloudProfile(event) {
         const file = event.target.files[0];
@@ -1309,10 +1407,76 @@ input[type="time"] {
                     if(typeof syncCoords === 'function') syncCoords('dec');
                 }
 
-                // 🔥 AUTO START FETCHING AFTER LOADING CHART
-                setTimeout(() => {
-                    if (typeof fetchFromCloud === "function") fetchFromCloud();
-                }, 300);
+                // ==========================================
+                // 🔥 OFFLINE MODE: LOAD EMBEDDED CHART DATA INSTANTLY
+                // ==========================================
+                if (data.chartData) {
+                    window.__LAST_SWISS_KP__ = data.chartData;
+                    if (typeof raw !== "undefined") raw = data.chartData;
+
+                    let y = data.date.y;
+                    let m = String(data.date.m).padStart(2, "0");
+                    let d = String(data.date.d).padStart(2, "0");
+                    let hr = String(data.time.h).padStart(2, "0");
+                    let min = String(data.time.min).padStart(2, "0");
+                    let sec = String(data.time.sec).padStart(2, "0");
+
+                    let baseDateEl = document.getElementById("baseDate");
+                    let baseTimeEl = document.getElementById("baseTimeLock");
+                    if(baseDateEl) baseDateEl.value = `${y}-${m}-${d}`;
+                    if(baseTimeEl) baseTimeEl.value = `${hr}:${min}:${sec}`;
+
+                    BASE_EPOCH = null;
+                    if(typeof lockBaseDateTime === "function") lockBaseDateTime();
+                    if(typeof captureBaseDateTime === "function") captureBaseDateTime();
+                    if(typeof syncDateTimeTool === "function") syncDateTimeTool();
+                    
+                    window.PLANET_RETRO_STATE = {};
+                    let retroSrc = data.chartData.ayanamshas?.Lahiri?.planets_retro || data.chartData.planets_retro;
+                    if(retroSrc){
+                        Object.keys(retroSrc).forEach(p=>{
+                            PLANET_RETRO_STATE[p] = !!retroSrc[p];
+                        });
+                    }
+                    
+                    document.getElementById("manualMode").checked = true;
+                    if(typeof manualMode.onchange === "function") manualMode.onchange();
+                    
+                    if(typeof data.chartData.lagna === "number"){
+                        writeToInputs("c1", data.chartData.lagna);
+                    }
+                    
+                    if(data.chartData.cusps){
+                        for(let i=1; i<=12; i++){
+                            if(typeof data.chartData.cusps[i] === "number"){
+                                writeToInputs("c"+i, data.chartData.cusps[i]);
+                            }
+                        }
+                    }
+                    
+                    if(data.chartData.planets){
+                        Object.keys(data.chartData.planets).forEach(p=>{
+                            if(p === "Rahu" || p === "Ketu" || p.endsWith("_true")) return;
+                            if(document.getElementById(p+"_sign") && typeof data.chartData.planets[p] === "number"){
+                                writeToInputs(p, data.chartData.planets[p]);
+                            }
+                        });
+                        
+                        if(typeof applyNodeModeKP === "function") applyNodeModeKP();
+                    }
+                    
+                    if(typeof resetAllTogglesToDefault === "function") resetAllTogglesToDefault();
+                    if(typeof buildCuspalChart === "function") buildCuspalChart();
+                    if(typeof drawD1 === "function") drawD1();
+
+                    console.log("Successfully loaded profile 100% offline from embedded JSON data.");
+
+                } else {
+                    // Fallback to legacy online fetch if profile is old
+                    setTimeout(() => {
+                        if (typeof fetchFromCloud === "function") fetchFromCloud();
+                    }, 300);
+                }
 
             } catch (error) {
                 console.error("Error parsing profile JSON:", error);
@@ -1322,6 +1486,12 @@ input[type="time"] {
         reader.readAsText(file);
         event.target.value = '';
     }
+	
+	
+	
+	
+	
+	
 </script>
 
 
@@ -2328,7 +2498,8 @@ function resetAllTogglesToDefault() {
         // 🔥 TABLE 53 RESET TRIGGERS 🔥
         { id: "t53CenterAlign", val: false },
         { id: "t53Untenanted", val: false },
-        { id: "t53_show_extra_stars", val: true }
+        { id: "t53_show_extra_stars", val: true },
+        { id: "t53_hide_everything", val: true }
     ];
 
     toggles.forEach(t => {
@@ -9712,7 +9883,7 @@ const OUTER_SCORE_MAP = {
     "6,8": 40, "6,10": 80, "8,10": 40, "8,12": 30, "10,12": 40,
     
     // 6. Single Houses 
-    "1": 20, "2": 30, "3": 10, "4": 30, "5": 0, "6": 40, "7": 20, "8": 10, "9": 0, "10": 50, "11": 10, "12": 10
+    "1": 20, "2": 30, "3": 10, "4": 30, "5": 0, "6": 50, "7": 20, "8": 10, "9": 0, "10": 50, "11": 10, "12": 10
 };
 
 const INNER_SCORE_MAP = {
@@ -13673,6 +13844,11 @@ window.addEventListener('DOMContentLoaded', () => {
                 <input type="checkbox" id="t50_show_extra_stars" class="t50-dark-cb" onchange="buildTable50()"> 
                 Show Star of Sublord & Star of Sub-sub
             </label>
+
+            <label style="color:#ef4444; cursor:pointer; font-size:16px; display:inline-flex; align-items:center; gap:8px; font-weight:bold;">
+                <input type="checkbox" id="t50_hide_everything" class="t50-dark-cb" onchange="buildTable50()" checked style="accent-color: #ef4444;"> 
+                Hide Everything
+            </label>
             
         </div>
 
@@ -13963,6 +14139,7 @@ function buildTable50() {
     let centerAlign = document.getElementById("t50CenterAlign")?.checked;
     let isUntenantedActive = document.getElementById("t50Untenanted")?.checked;
     let showExtraStars = document.getElementById("t50_show_extra_stars")?.checked;
+    let hideEverything = document.getElementById("t50_hide_everything")?.checked;
 
     function checkTenantedStatus(pl) {
         if (!pl || pl === "--") return false;
@@ -14072,7 +14249,8 @@ function buildTable50() {
         let showPlanetNumbers = true; // Planet ALWAYS shows numbers
         let showStarlordNumbers = isUntenantedActive ? pTenanted : true; // Hides if Planet has $
         
-        let collapseExtra = !showExtraStars;
+        let collapseBase = hideEverything;
+        let collapseExtra = hideEverything || !showExtraStars;
 
         let showSubNumbers = true; // Sub-lord ALWAYS shows numbers
         let showStarOfSubNumbers = isUntenantedActive ? subTenanted : true; // Hides if Sub-lord has $
@@ -14083,14 +14261,18 @@ function buildTable50() {
         box.appendChild(addRow("Planet", p, "#38bdf8", showPlanetNumbers, false));
         box.appendChild(addRow("Starlord", kp.star, "#f472b6", showStarlordNumbers, false));
 
-        box.appendChild(createDivider());
+        if (!hideEverything) {
+            box.appendChild(createDivider());
+        }
 
-        box.appendChild(addRow("Sub-lord", kp.sub, "#fbbf24", showSubNumbers, false));
+        box.appendChild(addRow("Sub-lord", kp.sub, "#fbbf24", showSubNumbers, collapseBase));
         box.appendChild(addRow("Star of Sub", starOfSub, "#a855f7", showStarOfSubNumbers, collapseExtra));
 
-        box.appendChild(createDivider());
+        if (!hideEverything) {
+            box.appendChild(createDivider());
+        }
 
-        box.appendChild(addRow("Sub-sub", kp.ssl, "#22c55e", showSslNumbers, false));
+        box.appendChild(addRow("Sub-sub", kp.ssl, "#22c55e", showSslNumbers, collapseBase));
         box.appendChild(addRow("Star of<br>Sub-Sub", starOfSSL, "#ef4444", showStarOfSslNumbers, collapseExtra));
 
         container.appendChild(box);
@@ -14249,6 +14431,11 @@ window.addEventListener('DOMContentLoaded', () => {
             <label style="color:#a855f7; cursor:pointer; font-size:16px; display:inline-flex; align-items:center; gap:8px; font-weight:bold;">
                 <input type="checkbox" id="t53_show_extra_stars" class="t50-dark-cb" onchange="buildTable53()" checked> 
                 Show Star of Sublord & Star of Sub-sub
+            </label>
+
+            <label style="color:#ef4444; cursor:pointer; font-size:16px; display:inline-flex; align-items:center; gap:8px; font-weight:bold;">
+                <input type="checkbox" id="t53_hide_everything" class="t50-dark-cb" onchange="buildTable53()" checked style="accent-color: #ef4444;"> 
+                Hide Everything
             </label>
         </div>
 
@@ -14507,16 +14694,22 @@ function createT53Box(planet, onClick, centerAlign, isUntenantedActive, showExtr
     box.appendChild(addRow("Planet", renderPlanet, "#38bdf8", showPlanetNumbers, false));
     box.appendChild(addRow("Starlord", kp.star, "#f472b6", showStarlordNumbers, false));
 
-    box.appendChild(createT53Divider(isHiddenBox));
+    let hideEverything = document.getElementById("t53_hide_everything")?.checked;
+    let collapseBase = hideEverything;
+    let collapseExtra = hideEverything || !showExtraStars;
 
-    let collapseExtra = !showExtraStars;
+    if (!hideEverything) {
+        box.appendChild(createT53Divider(isHiddenBox));
+    }
 
-    box.appendChild(addRow("Sub-lord", kp.sub, "#fbbf24", showSubNumbers, false));
+    box.appendChild(addRow("Sub-lord", kp.sub, "#fbbf24", showSubNumbers, collapseBase));
     box.appendChild(addRow("Star of Sub", starOfSub, "#a855f7", showStarOfSubNumbers, collapseExtra));
 
-    box.appendChild(createT53Divider(isHiddenBox));
+    if (!hideEverything) {
+        box.appendChild(createT53Divider(isHiddenBox));
+    }
 
-    box.appendChild(addRow("Sub-sub", kp.ssl, "#22c55e", showSslNumbers, false));
+    box.appendChild(addRow("Sub-sub", kp.ssl, "#22c55e", showSslNumbers, collapseBase));
     box.appendChild(addRow("Star of<br>Sub-Sub", starOfSSL, "#ef4444", showStarOfSslNumbers, collapseExtra));
 
     return box;
